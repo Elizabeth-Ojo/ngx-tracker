@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NGX Portfolio — Elizabeth Balogun</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080c14;color:#dde5f0;font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#1a2840;border-radius:2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+header{background:#0f1623;border-bottom:1px solid #1a2840;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:10px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#00c9a7,#0088bb);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:15px;color:#000}
+.logo-text{font-weight:700;font-size:15px;letter-spacing:-.02em}
+.logo-sub{font-size:10px;color:#5a7298;font-family:'IBM Plex Mono',monospace}
+.hdr-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{border-radius:20px;padding:3px 10px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:600;border:1px solid}
+.pg{background:#00c9a718;border-color:#00c9a755;color:#00c9a7}
+.py{background:#f0a50018;border-color:#f0a50055;color:#f0a500}
+.pr{background:#ef444418;border-color:#ef444455;color:#ef4444}
+.pm{background:#1a284020;border-color:#1a284066;color:#5a7298}
+.rbtn{background:none;border:1px solid #1a2840;border-radius:8px;padding:6px 13px;color:#5a7298;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12px;font-family:'Inter',sans-serif}
+.rbtn:hover{border-color:#00c9a755;color:#00c9a7}
+.spin{animation:spin .7s linear infinite}
+.body{max-width:1440px;margin:0 auto;padding:18px 14px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:8px;margin-bottom:16px}
+.mc{background:#0f1623;border:1px solid #1a2840;border-radius:10px;padding:12px 13px}
+.ml{font-size:9px;color:#5a7298;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px}
+.mv{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:17px}
+.ms{font-size:10px;color:#5a7298;margin-top:3px}
+.cg{color:#00c9a7}.cr{color:#ef4444}.cy{color:#f0a500}.ct{color:#dde5f0}.cm{color:#5a7298}
+.tabs{display:flex;gap:4px;margin-bottom:16px}
+.tab{padding:7px 16px;border-radius:8px;border:1px solid #1a2840;background:none;color:#5a7298;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;transition:all .15s}
+.tab.active{border-color:#00c9a755;background:#00c9a718;color:#00c9a7;font-weight:600}
+.tw{background:#0f1623;border:1px solid #1a2840;border-radius:12px;overflow:hidden;margin-bottom:20px}
+.th2{padding:13px 18px;border-bottom:1px solid #1a2840;display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+.ts{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{padding:9px 12px;font-size:10px;color:#5a7298;text-transform:uppercase;letter-spacing:.07em;font-weight:500;white-space:nowrap;background:#0b1220;border-bottom:1px solid #1a2840}
+th.r{text-align:right}th.l{text-align:left}
+td{padding:10px 12px;border-bottom:1px solid #1a284044;font-family:'IBM Plex Mono',monospace;font-size:12px}
+td.r{text-align:right}td.l{text-align:left;font-family:'Inter',sans-serif}
+tbody tr:hover{background:#172030}
+.brow{background:#ef44440a}
+.badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;border:1px solid}
+.bt1{background:#8b5cf618;border-color:#8b5cf644;color:#a78bfa}
+.bt2{background:#3b82f618;border-color:#3b82f644;color:#60a5fa}
+.bt3{background:#10b98118;border-color:#10b98144;color:#34d399}
+.bftse{background:#8b5cf614;border-color:#8b5cf633;color:#a78bfa}
+.bfpot{background:#8b5cf60e;border-color:#8b5cf625;color:#c4b5fd}
+.bno{background:#ef444414;border-color:#ef444433;color:#fca5a5}
+.bfrz{background:#3b82f614;border-color:#3b82f633;color:#93c5fd}
+.bbr{background:#ef444422;border-color:#ef444455;color:#ef4444;font-size:10px;padding:2px 7px}
+.nstrip{border-top:1px solid #1a2840;padding:14px 18px}
+.nlabel{font-size:9px;color:#5a7298;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px}
+.nrow{display:flex;gap:10px;margin-bottom:5px;font-size:12px}
+.nsym{font-family:'IBM Plex Mono',monospace;font-weight:700;color:#dde5f0;min-width:90px}
+.ntxt{color:#5a7298}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:20px}
+.sc{background:#0f1623;border:1px solid #1a2840;border-radius:12px;padding:16px 18px}
+.sc.br{background:#ef44440a;border-color:#ef444444}
+.sname{font-size:11px;color:#5a7298;margin-bottom:6px}
+.spct{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:26px}
+.scap{font-size:10px;margin-top:4px}
+.sbg{margin-top:10px;height:4px;border-radius:2px;background:#1a2840;overflow:hidden}
+.sbar{height:100%;border-radius:2px;transition:width .5s}
+.snames{margin-top:8px;font-size:11px;color:#5a7298}
+.clist{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.cc{border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:20px;border:1px solid}
+.cdays{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:30px;min-width:55px}
+.cdate{font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.ctitle{font-weight:600;font-size:15px}
+.ctype{font-size:11px;color:#5a7298;margin-top:3px;text-transform:capitalize}
+footer{border-top:1px solid #1a2840;padding:14px 20px;font-size:10px;color:#2d4060;text-align:center;font-family:'IBM Plex Mono',monospace}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-mark">₦</div>
+    <div>
+      <div class="logo-text">NGX Portfolio</div>
+      <div class="logo-sub">Elizabeth Balogun · CHD C323028ET</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <span id="bbadge" class="pill pr" style="display:none"></span>
+    <span id="lbadge" class="pill pm"><span class="dot" style="background:#5a7298"></span>Loading…</span>
+    <span class="pill py">FTSE <span id="fdays">—</span>d</span>
+    <button class="rbtn" onclick="go()">
+      <svg id="sico" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Refresh
+    </button>
+  </div>
+</header>
+
+<div class="body">
+  <div class="mgrid">
+    <div class="mc"><div class="ml">Portfolio Value</div><div class="mv ct" id="mtot">—</div><div class="ms" id="meur">—</div></div>
+    <div class="mc"><div class="ml">Total P&L</div><div class="mv" id="mpnl">—</div><div class="ms" id="mpnlv">—</div></div>
+    <div class="mc"><div class="ml">EUR/NGN</div><div class="mv cg" id="men">—</div><div class="ms">spot rate</div></div>
+    <div class="mc"><div class="ml">Brent Crude</div><div class="mv" id="mbr">—</div><div class="ms" id="mbrc">—</div></div>
+    <div class="mc"><div class="ml">UBA Kill-Gate</div><div class="mv cr" id="muba">—</div><div class="ms">27 Jul 2026</div></div>
+    <div class="mc"><div class="ml">NAICOM</div><div class="mv cr" id="mnaico">—</div><div class="ms">30 Jul 2026</div></div>
+    <div class="mc"><div class="ml">FTSE Sep 21</div><div class="mv cy" id="mftse">—</div><div class="ms">$840M–$1.04B inflows</div></div>
+    <div class="mc"><div class="ml">Last Refresh</div><div class="mv cm" id="mtime" style="font-size:13px">—</div><div class="ms" id="msrc">snapshot</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="tab('portfolio',this)">Portfolio</button>
+    <button class="tab" onclick="tab('sectors',this)">Sectors</button>
+    <button class="tab" onclick="tab('catalysts',this)">Catalysts</button>
+  </div>
+
+  <div id="tp">
+    <div class="tw">
+      <div class="th2">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00c9a7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        17 Positions
+        <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a7298" id="dstamp">CHD snapshot · Jun 23</span>
+      </div>
+      <div class="ts"><table>
+        <thead><tr>
+          <th class="l">Stock</th><th class="l">Tier</th>
+          <th class="r">Units</th><th class="r">Avg Cost</th><th class="r">Price</th>
+          <th class="r">Day%</th><th class="r">Value</th><th class="r">P&L%</th>
+          <th class="r">EUR</th><th class="r">Stop</th><th class="r">Status</th>
+        </tr></thead>
+        <tbody id="ptb"></tbody>
+      </table></div>
+      <div class="nstrip"><div class="nlabel">Open items / kill-gates</div><div id="nlist"></div></div>
+    </div>
+  </div>
+  <div id="ts2" style="display:none"><div class="sgrid" id="sg"></div></div>
+  <div id="tc" style="display:none"><div class="clist" id="cl"></div></div>
+</div>
+
+<footer>NGX Advisory v3.3 · Prices: Yahoo Finance (server-side) + CHD fallback · 4% round-trip · Irish CGT · CHD C323028ET</footer>
+
+<script>
+const POS=[
+  {s:'MTN',    n:'MTN Nigeria',               u:1100, a:771.44,  t:'T1',sec:'Telecom',    f:1,x:1,fr:1,st:null,  nt:'FROZEN — 25% T1 cap binding'},
+  {s:'ZENITH', n:'Zenith Bank',                u:5000, a:120.43,  t:'T1',sec:'Banking',    f:1,x:1,fr:0,st:null,  nt:'No-Exit — FTSE confirmed'},
+  {s:'GTCO',   n:'GTCO',                       u:3000, a:134.79,  t:'T1',sec:'Banking',    f:1,x:1,fr:0,st:null,  nt:'No-Exit — FTSE confirmed'},
+  {s:'DANGCEM',n:'Dangote Cement',              u:146,  a:946.60,  t:'T1',sec:'Industrial', f:1,x:1,fr:1,st:null,  nt:'No-Exit LOCKED · 129 CHD + 17 Bamboo'},
+  {s:'WAPCO',  n:'Lafarge Africa',              u:500,  a:310.78,  t:'T2',sec:'Industrial', f:1,x:1,fr:0,st:null,  nt:'No-Exit — FTSE confirmed'},
+  {s:'SEPLAT', n:'Seplat Energy',               u:20,   a:9088.14, t:'T2',sec:'Energy',     f:1,x:1,fr:0,st:null,  nt:'No-Exit — add gate: Brent >$90'},
+  {s:'ARADEL', n:'Aradel Holdings',             u:256,  a:1760.89, t:'T2',sec:'Energy',     f:'p',x:0,fr:0,st:null, nt:'FTSE potential — Brent $85/30d gate'},
+  {s:'FIDELITY',n:'Fidelity Bank',              u:5000, a:19.82,   t:'T2',sec:'Banking',    f:0,x:0,fr:0,st:null,  nt:''},
+  {s:'UBA',    n:'United Bank for Africa',      u:2250, a:42.50,   t:'T2',sec:'Banking',    f:1,x:0,fr:0,st:37,    nt:'Kill-gate: Jul 27 H1 YoY PBT + close <₦37'},
+  {s:'NEM',    n:'NEM Insurance',               u:4300, a:32.07,   t:'T3',sec:'Insurance',  f:0,x:0,fr:0,st:null,  nt:'NAICOM Jul 30 catalyst'},
+  {s:'TRANSCORP',n:'Transcorp',                 u:1500, a:46.87,   t:'T3',sec:'Conglomerate',f:0,x:0,fr:0,st:36,   nt:'Kill-gate: Q2 revenue decline'},
+  {s:'NGXGROUP',n:'NGX Group',                  u:1000, a:147.19,  t:'T3',sec:'Financial',  f:0,x:0,fr:0,st:140,   nt:'⚠ STOP BREACH — ₦118 vs ₦140. Thesis doc required.'},
+  {s:'STERLING',n:'Sterling Financial Holdings', u:7300, a:7.91,    t:'T3',sec:'Banking',    f:0,x:0,fr:0,st:6.5,   nt:'Compounder — P/E ~5x, recap done'},
+  {s:'NAHCO',  n:'NAHCO',                       u:241,  a:186.68,  t:'T3',sec:'Aviation',   f:0,x:0,fr:0,st:150,   nt:'+34 bonus pending All Crown. Stop: ex-div adj.'},
+  {s:'PRESCO', n:'Presco',                       u:32,   a:2093.29, t:'T3',sec:'Agri',       f:0,x:0,fr:0,st:null,  nt:'Cherry-Pick fails #7 — rights dilution'},
+  {s:'OKOMU',  n:'Okomu Oil Palm',              u:16,   a:1678.05, t:'T3',sec:'Agri',       f:0,x:0,fr:0,st:null,  nt:''},
+  {s:'CUSTODIAN',n:'Custodian Investment',      u:37,   a:83.85,   t:'T3',sec:'Insurance',  f:0,x:0,fr:0,st:null,  nt:'Failed entry gates — exit candidate post Sep 21'},
+];
+const SNAP={MTN:830,ZENITH:117.90,GTCO:129,DANGCEM:1070,WAPCO:317.40,SEPLAT:11363.90,ARADEL:1750,FIDELITY:18.15,UBA:40,NEM:29,TRANSCORP:43,NGXGROUP:118.05,STERLING:7.65,NAHCO:148.50,PRESCO:2300,OKOMU:1418,CUSTODIAN:81.25};
+const CATS=[
+  {d:'2026-07-24',l:'MTN Q2 results',u:'high'},
+  {d:'2026-07-27',l:'UBA H1 kill-gate — YoY PBT + impairments',u:'critical'},
+  {d:'2026-07-30',l:'NAICOM recap deadline — NEM positive catalyst',u:'critical'},
+  {d:'2026-09-21',l:'FTSE Frontier inclusion — $840M–$1.04B passive inflows',u:'anchor'},
+];
+const SCAPS={Banking:40,Energy:25};
+
+let lp={},lc={},en=1578,bp=null,bc=null,lf=null,live=false;
+const gp=s=>lp[s]||SNAP[s];
+const gc=s=>lc[s]??null;
+const ff=(n,d=2)=>n==null?'—':n.toLocaleString('en-NG',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fm=n=>{if(n==null)return'—';if(n>=1e6)return`₦${(n/1e6).toFixed(2)}M`;if(n>=1e3)return`₦${(n/1e3).toFixed(0)}K`;return`₦${n.toFixed(0)}`};
+const pc=n=>n==null?'—':`${n>=0?'+':''}${n.toFixed(2)}%`;
+const dt=d=>Math.ceil((new Date(d)-new Date())/86400000);
+
+async function go(){
+  document.getElementById('sico').classList.add('spin');
+  try{
+    const r=await fetch('/api/prices');
+    if(!r.ok)throw 0;
+    const d=await r.json();
+    if(d.ok&&d.prices){
+      for(const[k,v]of Object.entries(d.prices)){
+        if(k==='EUR_NGN'){en=v.price;continue}
+        if(k==='BRENT'){bp=v.price;bc=v.change;continue}
+        lp[k]=v.price;if(v.change!=null)lc[k]=v.change;
+      }
+      lf=d.fetchedAt;live=true;
+    }
+  }catch(e){live=false;}
+  render();
+  setTimeout(()=>document.getElementById('sico').classList.remove('spin'),700);
+}
+
+function render(){
+  const tl=POS.reduce((s,p)=>s+gp(p.s)*p.u,0);
+  const tc=POS.reduce((s,p)=>s+p.a*p.u,0);
+  const pnl=tl-tc,pp=(pnl/tc)*100;
+  document.getElementById('mtot').textContent=fm(tl);
+  document.getElementById('meur').textContent=`≈ €${ff(tl/en,0)}`;
+  const pe=document.getElementById('mpnl');pe.textContent=pc(pp);pe.className='mv '+(pnl>=0?'cg':'cr');
+  document.getElementById('mpnlv').textContent=(pnl>=0?'+':'')+fm(pnl);
+  document.getElementById('men').textContent=`₦${ff(en,0)}${live?'':'*'}`;
+  const be=document.getElementById('mbr');be.textContent=bp?`$${ff(bp,1)}`:'$79*';be.className='mv '+(bc==null?'cm':bc>=0?'cg':'cr');
+  document.getElementById('mbrc').textContent=bc!=null?pc(bc):'snapshot';
+  document.getElementById('muba').textContent=dt('2026-07-27')+'d';
+  document.getElementById('mnaico').textContent=dt('2026-07-30')+'d';
+  document.getElementById('mftse').textContent=dt('2026-09-21')+'d';
+  document.getElementById('fdays').textContent=dt('2026-09-21');
+  document.getElementById('mtime').textContent=lf?new Date(lf).toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'}):'18:10';
+  document.getElementById('msrc').textContent=live?'Live · Yahoo Finance':'CHD snapshot · Jun 23';
+  document.getElementById('dstamp').textContent=live&&lf?`Live · ${new Date(lf).toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'})}`:'CHD snapshot · Jun 23 18:10 WAT';
+
+  // Badge
+  const brs=POS.filter(p=>p.st&&gp(p.s)<=p.st);
+  const bb=document.getElementById('bbadge');
+  bb.style.display=brs.length?'':'none';
+  if(brs.length)bb.textContent=`⚠ ${brs.length} STOP BREACH${brs.length>1?'ES':''}`;
+  const lb=document.getElementById('lbadge');
+  lb.className='pill '+(live?'pg':'pm');
+  lb.innerHTML=`<span class="dot" style="background:${live?'#00c9a7':'#5a7298'};${live?'animation:pulse 2s infinite':''}"></span>${live?'Live':'Snapshot'}`;
+
+  // Portfolio
+  const tb=document.getElementById('ptb'),nl=document.getElementById('nlist');
+  tb.innerHTML='';nl.innerHTML='';
+  const tcl={T1:'bt1',T2:'bt2',T3:'bt3'};
+  POS.forEach(p=>{
+    const price=gp(p.s),ch=gc(p.s),v=price*p.u,pp2=((price-p.a)/p.a)*100,eu=v/en;
+    const br=p.st&&price<=p.st,nr=p.st&&!br&&((price-p.st)/p.st)<0.05;
+    let tags='';
+    if(p.f===1)tags+='<span class="badge bftse">FTSE</span>';
+    if(p.f==='p')tags+='<span class="badge bfpot">FTSE?</span>';
+    if(p.x)tags+='<span class="badge bno">NO-EXIT</span>';
+    if(p.fr)tags+='<span class="badge bfrz">FROZEN</span>';
+    let st='<span style="color:#2d4060">—</span>';
+    if(br)st='<span class="badge bbr">⚠ BREACH</span>';
+    else if(p.fr)st='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+    else if(p.x)st='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+    else if(nr)st='<span style="color:#f0a500;font-size:10px">Near stop</span>';
+    const tr=document.createElement('tr');
+    if(br)tr.className='brow';
+    tr.innerHTML=`
+      <td class="l" style="min-width:185px">
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px">${p.s}</span>${tags}
+          </div>
+          <span style="font-size:10px;color:#5a7298;font-family:'Inter',sans-serif">${p.n}</span>
+        </div>
+      </td>
+      <td class="l"><span class="badge ${tcl[p.t]}">${p.t}</span></td>
+      <td class="r" style="color:#5a7298">${p.u.toLocaleString()}</td>
+      <td class="r" style="color:#5a7298">₦${ff(p.a)}</td>
+      <td class="r" style="font-weight:600;color:#dde5f0">₦${ff(price)}</td>
+      <td class="r" style="color:${ch==null?'#2d4060':ch>=0?'#00c9a7':'#ef4444'}">${ch!=null?pc(ch):'—'}</td>
+      <td class="r">${fm(v)}</td>
+      <td class="r" style="font-weight:700;color:${pp2>=0?'#00c9a7':'#ef4444'}">${pc(pp2)}</td>
+      <td class="r" style="color:#5a7298">€${ff(eu,0)}</td>
+      <td class="r" style="color:${br?'#ef4444':nr?'#f0a500':'#2d4060'}">${p.st?`₦${p.st}`:'—'}</td>
+      <td class="r">${st}</td>`;
+    tb.appendChild(tr);
+    if(p.nt)nl.innerHTML+=`<div class="nrow"><span class="nsym">${p.s}</span><span class="ntxt">${p.nt}</span></div>`;
+  });
+
+  // Sectors
+  const tl2=POS.reduce((s,p)=>s+gp(p.s)*p.u,0);
+  const sm={};
+  POS.forEach(p=>{const v=gp(p.s)*p.u;if(!sm[p.sec])sm[p.sec]={v:0,ss:[]};sm[p.sec].v+=v;sm[p.sec].ss.push(p.s);});
+  const sg=document.getElementById('sg');sg.innerHTML='';
+  Object.entries(sm).sort((a,b)=>b[1].v-a[1].v).forEach(([n,d])=>{
+    const pp=((d.v/tl2)*100),cap=SCAPS[n],br=cap&&pp>cap,bw=cap?Math.min((pp/cap)*100,100):Math.min(pp*2,100);
+    const c=document.createElement('div');c.className='sc'+(br?' br':'');
+    c.innerHTML=`<div class="sname">${n}${br?' ⚠':''}</div><div class="spct ${br?'cr':'ct'}">${pp.toFixed(1)}%</div>${cap?`<div class="scap ${br?'cr':'cm'}">Cap: ${cap}%${br?' — BREACH':''}</div>`:''}<div class="sbg"><div class="sbar" style="width:${bw}%;background:${br?'#ef4444':'#00c9a7'}"></div></div><div class="snames">${d.ss.join(' · ')}</div>`;
+    sg.appendChild(c);
+  });
+
+  // Catalysts
+  const cols={critical:'#ef4444',high:'#f0a500',anchor:'#00c9a7'};
+  const cl=document.getElementById('cl');cl.innerHTML='';
+  CATS.forEach(c=>{
+    const col=cols[c.u]||'#5a7298',d=dt(c.d);
+    const cc=document.createElement('div');cc.className='cc';
+    cc.style.cssText=`background:${col}0a;border-color:${col}33`;
+    cc.innerHTML=`<div class="cdays" style="color:${col}">${d}</div><div><div class="cdate" style="color:${col}">${c.d}</div><div class="ctitle">${c.l}</div><div class="ctype">${c.u}</div></div>`;
+    cl.appendChild(cc);
+  });
+}
+
+function tab(n,btn){
+  document.getElementById('tp').style.display=n==='portfolio'?'':'none';
+  document.getElementById('ts2').style.display=n==='sectors'?'':'none';
+  document.getElementById('tc').style.display=n==='catalysts'?'':'none';
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+go();
+setInterval(()=>{const h=new Date().getHours();if(h>=8&&h<16)go();},300000);
+</script>
+</body>
+</html>
