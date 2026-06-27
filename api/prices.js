@@ -1,24 +1,15 @@
 // Vercel serverless function — server-side, key stays secret.
-// NGX Pulse returns { stocks: [...], market: {...} }. Array is at json.stocks.
+// Returns ALL NGX Pulse stocks keyed by NGX ticker, so any of the 146
+// tickers can be added in the app and still get a live price.
 // Key read from NGX_PULSE_KEY env var. Never hardcode (public repo).
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
 
-  const MAP = {
-    MTNN: 'MTN', ZENITHBANK: 'ZENITH', GTCO: 'GTCO', DANGCEM: 'DANGCEM',
-    WAPCO: 'WAPCO', SEPLAT: 'SEPLAT', ARADEL: 'ARADEL', FIDELITYBK: 'FIDELITY',
-    UBA: 'UBA', NEM: 'NEM', TRANSCORP: 'TRANSCORP', NAHCO: 'NAHCO',
-    STERLINGNG: 'STERLING', NGXGROUP: 'NGXGROUP', PRESCO: 'PRESCO',
-    OKOMUOIL: 'OKOMU', CUSTODIAN: 'CUSTODIAN',
-  };
-
-  const prices = {};
+  const prices = {};   // keyed by NGX ticker: { p: price, c: change%, n: name }
   let source = 'none';
-  let asi = null;
-  let marketStatus = null;
-  let tradeDate = null;
+  let asi = null, marketStatus = null, tradeDate = null;
   const KEY = process.env.NGX_PULSE_KEY;
 
   if (KEY) {
@@ -30,26 +21,18 @@ export default async function handler(req, res) {
         const json = await r.json();
         const rows = Array.isArray(json?.stocks) ? json.stocks : [];
         for (const s of rows) {
-          const internal = MAP[s.symbol];
-          const px = s.current_price;
-          const chg = s.change_percent;
-          if (internal && typeof px === 'number') {
-            prices[internal] = {
-              price: px,
-              change: typeof chg === 'number' ? chg : null,
-              prevClose: s.previous_close ?? null,
-              source: 'ngxpulse',
-              timestamp: new Date().toISOString(),
+          if (s.symbol && typeof s.current_price === 'number') {
+            prices[s.symbol] = {
+              p: s.current_price,
+              c: typeof s.change_percent === 'number' ? s.change_percent : null,
+              n: s.name || s.symbol,
             };
           }
         }
-        // Pull live ASI / market block
         if (json?.market) {
           asi = {
-            value: json.market.asi,
-            change: json.market.pct_change,
-            advancers: json.market.advancers,
-            decliners: json.market.decliners,
+            value: json.market.asi, change: json.market.pct_change,
+            advancers: json.market.advancers, decliners: json.market.decliners,
             unchanged: json.market.unchanged,
           };
           marketStatus = json.market.market_status || null;
@@ -67,25 +50,24 @@ export default async function handler(req, res) {
   }
 
   // FX: EUR/NGN
+  let eurNgn = null;
   try {
     const fx = await fetch('https://open.er-api.com/v6/latest/EUR', { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    if (fx.ok) { const d = await fx.json(); if (d?.rates?.NGN) prices['EUR_NGN'] = { price: d.rates.NGN, source: 'er-api' }; }
+    if (fx.ok) { const d = await fx.json(); if (d?.rates?.NGN) eurNgn = d.rates.NGN; }
   } catch (e) {}
 
   // Brent
+  let brent = null;
   try {
     const br = await fetch('https://stooq.com/q/l/?s=cb.f&f=sd2t2ohlcv&h&e=csv', { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    if (br.ok) { const csv = await br.text(); const lines = csv.trim().split('\n'); if (lines.length >= 2) { const cols = lines[1].split(','); const close = parseFloat(cols[6]); if (!isNaN(close)) prices['BRENT'] = { price: close, change: null, source: 'stooq' }; } }
+    if (br.ok) { const csv = await br.text(); const lines = csv.trim().split('\n'); if (lines.length >= 2) { const cols = lines[1].split(','); const close = parseFloat(cols[6]); if (!isNaN(close)) brent = close; } }
   } catch (e) {}
 
-  const equityCount = Object.keys(prices).filter((k) => k !== 'EUR_NGN' && k !== 'BRENT').length;
+  const count = Object.keys(prices).length;
   res.status(200).json({
-    ok: equityCount > 0,
-    source,
-    count: equityCount,
-    asi,
-    marketStatus,
-    tradeDate,
+    ok: count > 0,
+    source, count, asi, marketStatus, tradeDate,
+    eurNgn, brent,
     prices,
     fetchedAt: new Date().toISOString(),
   });
