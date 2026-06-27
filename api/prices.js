@@ -1,85 +1,111 @@
-// Vercel serverless function — runs server-side, no CORS issues
-// Fetches NGX prices from Yahoo Finance (NGX tickers use .LG suffix)
-// Falls back to afx.kwayisi.org scrape for unlisted tickers
+// Vercel serverless function — server-side, key stays secret.
+// PRIMARY: NGX Pulse  GET /api/ngxdata/stocks  (X-API-Key header)
+// FX:      open.er-api.com  (free, no key) for EUR/NGN
+// BRENT:   stooq.com CSV    (free, no key)
+//
+// The NGX Pulse key is read from the NGX_PULSE_KEY environment variable.
+// NEVER hardcode the key here — this repo is public.
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 's-maxage=300'); // cache 5 min
+  // Cache 5 min at the edge so we stay well under 100 calls/day on the free tier
+  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
 
-  // Yahoo Finance ticker map for NGX stocks
-  // Format: NGX_SYMBOL -> Yahoo ticker
-  const YAHOO_MAP = {
-    MTN: 'MTNN.LG',
-    ZENITH: 'ZENITHBANK.LG',
-    GTCO: 'GTCO.LG',
-    DANGCEM: 'DANGCEM.LG',
-    WAPCO: 'WAPCO.LG',
-    SEPLAT: 'SEPLAT.LG',
-    ARADEL: 'ARADEL.LG',
-    FIDELITY: 'FIDELITYBK.LG',
-    UBA: 'UBA.LG',
-    NEM: 'NEM.LG',
-    TRANSCORP: 'TRANSCORP.LG',
-    NAHCO: 'NAHCO.LG',
-    STERLING: 'STERLINGBANK.LG',
-    NGXGROUP: 'NGXGROUP.LG',
-    PRESCO: 'PRESCO.LG',
-    OKOMU: 'OKOMUOIL.LG',
-    CUSTODIAN: 'CUSTODIAN.LG',
+  // NGX Pulse ticker -> our internal symbol
+  const MAP = {
+    MTNN: 'MTN',
+    ZENITHBANK: 'ZENITH',
+    GTCO: 'GTCO',
+    DANGCEM: 'DANGCEM',
+    WAPCO: 'WAPCO',
+    SEPLAT: 'SEPLAT',
+    ARADEL: 'ARADEL',
+    FIDELITYBK: 'FIDELITY',
+    UBA: 'UBA',
+    NEM: 'NEM',
+    TRANSCORP: 'TRANSCORP',
+    NAHCO: 'NAHCO',
+    STERLINGNG: 'STERLING',
+    STERLING: 'STERLING', // edge case — some feeds still use STERLING
+    NGXGROUP: 'NGXGROUP',
+    PRESCO: 'PRESCO',
+    OKOMUOIL: 'OKOMU',
+    CUSTODIAN: 'CUSTODIAN',
   };
 
-  const symbols = Object.values(YAHOO_MAP).join(',');
+  const prices = {};
+  let source = 'none';
 
-  try {
-    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}&fields=regularMarketPrice,regularMarketChangePercent,regularMarketPreviousClose`;
-
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; NGXTracker/1.0)',
-        'Accept': 'application/json',
-      },
-    });
-
-    if (!response.ok) throw new Error(`Yahoo HTTP ${response.status}`);
-
-    const data = await response.json();
-    const quotes = data?.quoteResponse?.result || [];
-
-    // Reverse map: Yahoo ticker -> NGX symbol
-    const reverseMap = Object.fromEntries(
-      Object.entries(YAHOO_MAP).map(([k, v]) => [v, k])
-    );
-
-    const prices = {};
-    for (const q of quotes) {
-      const symbol = reverseMap[q.symbol];
-      if (symbol) {
-        prices[symbol] = {
-          price: q.regularMarketPrice,
-          change: q.regularMarketChangePercent,
-          prevClose: q.regularMarketPreviousClose,
-          source: 'yahoo',
-          timestamp: new Date().toISOString(),
-        };
+  // ── PRIMARY: NGX Pulse bulk equities ──
+  const KEY = process.env.NGX_PULSE_KEY;
+  if (KEY) {
+    try {
+      const r = await fetch('https://www.ngxpulse.ng/api/ngxdata/stocks', {
+        headers: {
+          'X-API-Key': KEY,
+          'Accept': 'application/json',
+        },
+      });
+      if (r.ok) {
+        const all = await r.json();
+        if (Array.isArray(all)) {
+          for (const s of all) {
+            const internal = MAP[s.symbol];
+            if (internal && typeof s.current_price === 'number') {
+              prices[internal] = {
+                price: s.current_price,
+                change: typeof s.change_percent === 'number' ? s.change_percent : null,
+                source: 'ngxpulse',
+                timestamp: new Date().toISOString(),
+              };
+            }
+          }
+        }
+        if (Object.keys(prices).length > 0) source = 'NGX Pulse';
+      } else {
+        source = `ngxpulse-error-${r.status}`;
       }
+    } catch (e) {
+      source = 'ngxpulse-fetch-failed';
     }
+  } else {
+    source = 'no-key-set';
+  }
 
-    // Also fetch EUR/NGN and Brent
-    const fxUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=EURNGN%3DX,BZ%3DF`;
-    const fxRes = await fetch(fxUrl, {
+  // ── FX: EUR/NGN (free, no key) ──
+  try {
+    const fx = await fetch('https://open.er-api.com/v6/latest/EUR', {
       headers: { 'User-Agent': 'Mozilla/5.0' },
     });
-    if (fxRes.ok) {
-      const fxData = await fxRes.json();
-      const fxQuotes = fxData?.quoteResponse?.result || [];
-      const eurngnQ = fxQuotes.find((q) => q.symbol === 'EURNGN=X');
-      const brentQ = fxQuotes.find((q) => q.symbol === 'BZ=F');
-      if (eurngnQ) prices['EUR_NGN'] = { price: eurngnQ.regularMarketPrice, source: 'yahoo' };
-      if (brentQ) prices['BRENT'] = { price: brentQ.regularMarketPrice, change: brentQ.regularMarketChangePercent, source: 'yahoo' };
+    if (fx.ok) {
+      const d = await fx.json();
+      if (d?.rates?.NGN) prices['EUR_NGN'] = { price: d.rates.NGN, source: 'er-api' };
     }
+  } catch (e) {}
 
-    res.status(200).json({ ok: true, prices, fetchedAt: new Date().toISOString() });
-  } catch (err) {
-    res.status(200).json({ ok: false, error: err.message, prices: {} });
-  }
+  // ── BRENT (free, no key) ──
+  try {
+    const br = await fetch('https://stooq.com/q/l/?s=cb.f&f=sd2t2ohlcv&h&e=csv', {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    if (br.ok) {
+      const csv = await br.text();
+      const lines = csv.trim().split('\n');
+      if (lines.length >= 2) {
+        const cols = lines[1].split(',');
+        const close = parseFloat(cols[6]);
+        if (!isNaN(close)) prices['BRENT'] = { price: close, change: null, source: 'stooq' };
+      }
+    }
+  } catch (e) {}
+
+  const equityCount = Object.keys(prices).filter((k) => k !== 'EUR_NGN' && k !== 'BRENT').length;
+
+  res.status(200).json({
+    ok: equityCount > 0,
+    source,
+    count: equityCount,
+    prices,
+    fetchedAt: new Date().toISOString(),
+  });
 }
