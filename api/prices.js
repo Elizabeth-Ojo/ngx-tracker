@@ -1,72 +1,71 @@
 // Vercel serverless function — server-side, key stays secret.
-// PRIMARY: NGX Pulse  GET /api/ngxdata/stocks  (X-API-Key header)
-// FX:      open.er-api.com  (free, no key) for EUR/NGN
-// BRENT:   stooq.com CSV    (free, no key)
-//
-// The NGX Pulse key is read from the NGX_PULSE_KEY environment variable.
-// NEVER hardcode the key here — this repo is public.
+// NGX Pulse wraps data as { success, data: [...] } — parse accordingly.
+// Key read from NGX_PULSE_KEY env var. Never hardcode (public repo).
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  // Cache 5 min at the edge so we stay well under 100 calls/day on the free tier
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
 
   // NGX Pulse ticker -> our internal symbol
   const MAP = {
-    MTNN: 'MTN',
-    ZENITHBANK: 'ZENITH',
-    GTCO: 'GTCO',
-    DANGCEM: 'DANGCEM',
-    WAPCO: 'WAPCO',
-    SEPLAT: 'SEPLAT',
-    ARADEL: 'ARADEL',
-    FIDELITYBK: 'FIDELITY',
-    UBA: 'UBA',
-    NEM: 'NEM',
-    TRANSCORP: 'TRANSCORP',
-    NAHCO: 'NAHCO',
-    STERLINGNG: 'STERLING',
-    STERLING: 'STERLING', // edge case — some feeds still use STERLING
-    NGXGROUP: 'NGXGROUP',
-    PRESCO: 'PRESCO',
-    OKOMUOIL: 'OKOMU',
-    CUSTODIAN: 'CUSTODIAN',
+    MTNN: 'MTN', ZENITHBANK: 'ZENITH', GTCO: 'GTCO', DANGCEM: 'DANGCEM',
+    WAPCO: 'WAPCO', SEPLAT: 'SEPLAT', ARADEL: 'ARADEL', FIDELITYBK: 'FIDELITY',
+    UBA: 'UBA', NEM: 'NEM', TRANSCORP: 'TRANSCORP', NAHCO: 'NAHCO',
+    STERLINGNG: 'STERLING', STERLING: 'STERLING', NGXGROUP: 'NGXGROUP',
+    PRESCO: 'PRESCO', OKOMUOIL: 'OKOMU', CUSTODIAN: 'CUSTODIAN',
   };
 
   const prices = {};
   let source = 'none';
+  let debug = {};
 
-  // ── PRIMARY: NGX Pulse bulk equities ──
   const KEY = process.env.NGX_PULSE_KEY;
+
+  // Try several possible equities endpoints; NGX Pulse may use /stocks or /equities
+  const ENDPOINTS = [
+    'https://www.ngxpulse.ng/api/ngxdata/stocks',
+    'https://www.ngxpulse.ng/api/ngxdata/equities',
+  ];
+
   if (KEY) {
-    try {
-      const r = await fetch('https://www.ngxpulse.ng/api/ngxdata/stocks', {
-        headers: {
-          'X-API-Key': KEY,
-          'Accept': 'application/json',
-        },
-      });
-      if (r.ok) {
-        const all = await r.json();
-        if (Array.isArray(all)) {
-          for (const s of all) {
-            const internal = MAP[s.symbol];
-            if (internal && typeof s.current_price === 'number') {
+    for (const url of ENDPOINTS) {
+      try {
+        const r = await fetch(url, {
+          headers: { 'X-API-Key': KEY, 'Accept': 'application/json' },
+        });
+        debug[url] = r.status;
+        if (r.ok) {
+          const json = await r.json();
+          // NGX Pulse wraps as { success, data: [...] }. Also handle bare array.
+          const rows = Array.isArray(json) ? json
+                     : Array.isArray(json?.data) ? json.data
+                     : [];
+          for (const s of rows) {
+            const ticker = s.symbol || s.canonical_symbol || s.ticker;
+            const internal = MAP[ticker];
+            // price field could be current_price, close, or price
+            const px = s.current_price ?? s.close ?? s.price;
+            const chg = s.change_percentage ?? s.change_percent ?? null;
+            if (internal && typeof px === 'number') {
               prices[internal] = {
-                price: s.current_price,
-                change: typeof s.change_percent === 'number' ? s.change_percent : null,
+                price: px,
+                change: typeof chg === 'number' ? chg : null,
                 source: 'ngxpulse',
                 timestamp: new Date().toISOString(),
               };
             }
           }
+          if (Object.keys(prices).length > 0) {
+            source = `NGX Pulse (${url.split('/').pop()})`;
+            break; // got data, stop trying endpoints
+          }
         }
-        if (Object.keys(prices).length > 0) source = 'NGX Pulse';
-      } else {
-        source = `ngxpulse-error-${r.status}`;
+      } catch (e) {
+        debug[url] = 'fetch-failed';
       }
-    } catch (e) {
-      source = 'ngxpulse-fetch-failed';
+    }
+    if (Object.keys(prices).length === 0 && source === 'none') {
+      source = 'ngxpulse-no-match';
     }
   } else {
     source = 'no-key-set';
@@ -105,6 +104,7 @@ export default async function handler(req, res) {
     ok: equityCount > 0,
     source,
     count: equityCount,
+    debug,
     prices,
     fetchedAt: new Date().toISOString(),
   });
