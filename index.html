@@ -76,6 +76,35 @@ tbody tr:hover{background:#172030}
 .ctype{font-size:11px;color:#5a7298;margin-top:3px;text-transform:capitalize}
 footer{border-top:1px solid #1a2840;padding:14px 20px;font-size:10px;color:#2d4060;text-align:center;font-family:'IBM Plex Mono',monospace}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+/* Edit button + modal */
+.ebtn{background:#00c9a715;border:1px solid #00c9a755;border-radius:8px;padding:6px 13px;color:#00c9a7;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12px;font-family:'Inter',sans-serif;font-weight:600}
+.ebtn:hover{background:#00c9a725}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+.overlay.show{display:flex}
+.modal{background:#0f1623;border:1px solid #1a2840;border-radius:14px;max-width:560px;width:100%;margin-top:20px;margin-bottom:40px}
+.mhead{padding:16px 20px;border-bottom:1px solid #1a2840;display:flex;align-items:center;justify-content:space-between}
+.mtitle{font-weight:700;font-size:16px}
+.mclose{background:none;border:none;color:#5a7298;cursor:pointer;font-size:24px;line-height:1;padding:0 4px}
+.mbody{padding:16px 20px;max-height:60vh;overflow-y:auto}
+.erow{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #1a284044}
+.esym{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;min-width:90px;color:#dde5f0}
+.einput{background:#080c14;border:1px solid #1a2840;border-radius:6px;padding:7px 9px;color:#dde5f0;font-family:'IBM Plex Mono',monospace;font-size:13px;width:90px;text-align:right}
+.einput:focus{outline:none;border-color:#00c9a755}
+.einput-label{font-size:9px;color:#5a7298;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.edel{background:#ef444415;border:1px solid #ef444444;border-radius:6px;color:#fca5a5;cursor:pointer;padding:6px 9px;font-size:11px;margin-left:auto}
+.edel:hover{background:#ef444425}
+.mfoot{padding:14px 20px;border-top:1px solid #1a2840;display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.addbtn{background:#00c9a715;border:1px solid #00c9a755;border-radius:8px;padding:8px 14px;color:#00c9a7;cursor:pointer;font-size:13px;font-weight:600;font-family:'Inter',sans-serif}
+.addbtn:hover{background:#00c9a725}
+.donebtn{background:#00c9a7;border:none;border-radius:8px;padding:8px 18px;color:#000;cursor:pointer;font-size:13px;font-weight:700;font-family:'Inter',sans-serif}
+.resetbtn{background:none;border:1px solid #1a2840;border-radius:8px;padding:8px 14px;color:#5a7298;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif}
+.addform{background:#080c14;border:1px solid #1a2840;border-radius:10px;padding:14px;margin-top:10px;display:none}
+.addform.show{display:block}
+.addform select,.addform input{background:#0f1623;border:1px solid #1a2840;border-radius:6px;padding:9px;color:#dde5f0;font-size:13px;width:100%;margin-bottom:8px;font-family:'Inter',sans-serif}
+.addform select:focus,.addform input:focus{outline:none;border-color:#00c9a755}
+.addform-row{display:flex;gap:8px}
+.addform-row>div{flex:1}
+.lbl{font-size:10px;color:#5a7298;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -94,6 +123,10 @@ footer{border-top:1px solid #1a2840;padding:14px 20px;font-size:10px;color:#2d40
     <button class="rbtn" onclick="go()">
       <svg id="sico" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       Refresh
+    </button>
+    <button class="ebtn" onclick="openEdit()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Edit
     </button>
   </div>
 </header>
@@ -120,7 +153,7 @@ footer{border-top:1px solid #1a2840;padding:14px 20px;font-size:10px;color:#2d40
     <div class="tw">
       <div class="th2">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00c9a7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-        17 Positions
+        <span id="poscount">17 Positions</span>
         <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a7298" id="dstamp">CHD snapshot · Jun 23</span>
       </div>
       <div class="ts"><table>
@@ -139,29 +172,71 @@ footer{border-top:1px solid #1a2840;padding:14px 20px;font-size:10px;color:#2d40
   <div id="tc" style="display:none"><div class="clist" id="cl"></div></div>
 </div>
 
-<footer>NGX Advisory v3.3 · Prices: Yahoo Finance (server-side) + CHD fallback · 4% round-trip · Irish CGT · CHD C323028ET</footer>
+<footer>NGX Advisory v3.3 · Prices: NGX Pulse (live) + CHD fallback · 4% round-trip · Irish CGT · CHD C323028ET</footer>
+
+<!-- EDIT PORTFOLIO MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="mhead">
+      <div class="mtitle">Edit Portfolio</div>
+      <button class="mclose" onclick="closeEdit()">×</button>
+    </div>
+    <div class="mbody" id="editList"></div>
+    <div class="addform" id="addForm">
+      <div class="lbl">Add a stock</div>
+      <select id="addSym"><option value="">Loading tickers…</option></select>
+      <div class="addform-row">
+        <div><div class="lbl">Units</div><input type="number" id="addUnits" placeholder="0" inputmode="decimal"></div>
+        <div><div class="lbl">Avg cost (₦)</div><input type="number" id="addAvg" placeholder="0.00" inputmode="decimal"></div>
+      </div>
+      <button class="donebtn" onclick="confirmAdd()" style="width:100%;margin-top:4px">Add to portfolio</button>
+    </div>
+    <div class="mfoot">
+      <button class="addbtn" onclick="toggleAddForm()">+ Add Stock</button>
+      <div style="display:flex;gap:8px">
+        <button class="resetbtn" onclick="resetPortfolio()">Reset to default</button>
+        <button class="donebtn" onclick="closeEdit()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-const POS=[
-  {s:'MTN',    n:'MTN Nigeria',               u:1100, a:771.44,  t:'T1',sec:'Telecom',    f:1,x:1,fr:1,st:null,  nt:'FROZEN — 25% T1 cap binding'},
-  {s:'ZENITH', n:'Zenith Bank',                u:5000, a:120.43,  t:'T1',sec:'Banking',    f:1,x:1,fr:0,st:null,  nt:'No-Exit — FTSE confirmed'},
-  {s:'GTCO',   n:'GTCO',                       u:3000, a:134.79,  t:'T1',sec:'Banking',    f:1,x:1,fr:0,st:null,  nt:'No-Exit — FTSE confirmed'},
-  {s:'DANGCEM',n:'Dangote Cement',              u:146,  a:946.60,  t:'T1',sec:'Industrial', f:1,x:1,fr:1,st:null,  nt:'No-Exit LOCKED · 129 CHD + 17 Bamboo'},
-  {s:'WAPCO',  n:'Lafarge Africa',              u:500,  a:310.78,  t:'T2',sec:'Industrial', f:1,x:1,fr:0,st:null,  nt:'No-Exit — FTSE confirmed'},
-  {s:'SEPLAT', n:'Seplat Energy',               u:20,   a:9088.14, t:'T2',sec:'Energy',     f:1,x:1,fr:0,st:null,  nt:'No-Exit — add gate: Brent >$90'},
-  {s:'ARADEL', n:'Aradel Holdings',             u:256,  a:1760.89, t:'T2',sec:'Energy',     f:'p',x:0,fr:0,st:null, nt:'FTSE potential — Brent $85/30d gate'},
-  {s:'FIDELITY',n:'Fidelity Bank',              u:5000, a:19.82,   t:'T2',sec:'Banking',    f:0,x:0,fr:0,st:null,  nt:''},
-  {s:'UBA',    n:'United Bank for Africa',      u:2250, a:42.50,   t:'T2',sec:'Banking',    f:1,x:0,fr:0,st:37,    nt:'Kill-gate: Jul 27 H1 YoY PBT + close <₦37'},
-  {s:'NEM',    n:'NEM Insurance',               u:4300, a:32.07,   t:'T3',sec:'Insurance',  f:0,x:0,fr:0,st:null,  nt:'NAICOM Jul 30 catalyst'},
-  {s:'TRANSCORP',n:'Transcorp',                 u:1500, a:46.87,   t:'T3',sec:'Conglomerate',f:0,x:0,fr:0,st:36,   nt:'Kill-gate: Q2 revenue decline'},
-  {s:'NGXGROUP',n:'NGX Group',                  u:1000, a:147.19,  t:'T3',sec:'Financial',  f:0,x:0,fr:0,st:140,   nt:'⚠ STOP BREACH — ₦118 vs ₦140. Thesis doc required.'},
-  {s:'STERLING',n:'Sterling Financial Holdings', u:7300, a:7.91,    t:'T3',sec:'Banking',    f:0,x:0,fr:0,st:6.5,   nt:'Compounder — P/E ~5x, recap done'},
-  {s:'NAHCO',  n:'NAHCO',                       u:241,  a:186.68,  t:'T3',sec:'Aviation',   f:0,x:0,fr:0,st:150,   nt:'+34 bonus pending All Crown. Stop: ex-div adj.'},
-  {s:'PRESCO', n:'Presco',                       u:32,   a:2093.29, t:'T3',sec:'Agri',       f:0,x:0,fr:0,st:null,  nt:'Cherry-Pick fails #7 — rights dilution'},
-  {s:'OKOMU',  n:'Okomu Oil Palm',              u:16,   a:1678.05, t:'T3',sec:'Agri',       f:0,x:0,fr:0,st:null,  nt:''},
-  {s:'CUSTODIAN',n:'Custodian Investment',      u:37,   a:83.85,   t:'T3',sec:'Insurance',  f:0,x:0,fr:0,st:null,  nt:'Failed entry gates — exit candidate post Sep 21'},
+// ─── CURATED INTELLIGENCE (static, keyed by NGX ticker) ───
+// Metadata for known holdings. New stocks you add use defaults.
+const META={
+  MTNN:{n:'MTN Nigeria',t:'T1',sec:'Telecom',f:1,x:1,fr:1,st:null,nt:'FROZEN — 25% T1 cap binding'},
+  ZENITHBANK:{n:'Zenith Bank',t:'T1',sec:'Banking',f:1,x:1,fr:0,st:null,nt:'No-Exit — FTSE confirmed'},
+  GTCO:{n:'GTCO',t:'T1',sec:'Banking',f:1,x:1,fr:0,st:null,nt:'No-Exit — FTSE confirmed'},
+  DANGCEM:{n:'Dangote Cement',t:'T1',sec:'Industrial',f:1,x:1,fr:1,st:null,nt:'No-Exit LOCKED · 129 CHD + 17 Bamboo'},
+  WAPCO:{n:'Lafarge Africa',t:'T2',sec:'Industrial',f:1,x:1,fr:0,st:null,nt:'No-Exit — FTSE confirmed'},
+  SEPLAT:{n:'Seplat Energy',t:'T2',sec:'Energy',f:1,x:1,fr:0,st:null,nt:'No-Exit — add gate: Brent >$90'},
+  ARADEL:{n:'Aradel Holdings',t:'T2',sec:'Energy',f:'p',x:0,fr:0,st:null,nt:'FTSE potential — Brent $85/30d gate'},
+  FIDELITYBK:{n:'Fidelity Bank',t:'T2',sec:'Banking',f:0,x:0,fr:0,st:null,nt:''},
+  UBA:{n:'United Bank for Africa',t:'T2',sec:'Banking',f:1,x:0,fr:0,st:37,nt:'Kill-gate: Jul 27 H1 YoY PBT + close <₦37'},
+  NEM:{n:'NEM Insurance',t:'T3',sec:'Insurance',f:0,x:0,fr:0,st:null,nt:'NAICOM Jul 30 catalyst'},
+  TRANSCORP:{n:'Transnational Corp',t:'T3',sec:'Conglomerate',f:0,x:0,fr:0,st:36,nt:'Kill-gate: Q2 revenue decline'},
+  NGXGROUP:{n:'NGX Group',t:'T3',sec:'Financial',f:0,x:0,fr:0,st:140,nt:'⚠ STOP BREACH — verify vs ₦140 stop. Thesis doc required.'},
+  STERLINGNG:{n:'Sterling Financial Holdings',t:'T3',sec:'Banking',f:0,x:0,fr:0,st:6.5,nt:'Compounder — P/E ~5x, recap done'},
+  NAHCO:{n:'NAHCO',t:'T3',sec:'Aviation',f:0,x:0,fr:0,st:150,nt:'+34 bonus pending All Crown. Stop: ex-div adj.'},
+  PRESCO:{n:'Presco',t:'T3',sec:'Agri',f:0,x:0,fr:0,st:null,nt:'Cherry-Pick fails #7 — rights dilution'},
+  OKOMUOIL:{n:'Okomu Oil Palm',t:'T3',sec:'Agri',f:0,x:0,fr:0,st:null,nt:''},
+  CUSTODIAN:{n:'Custodian Investment',t:'T3',sec:'Insurance',f:0,x:0,fr:0,st:null,nt:'Failed entry gates — exit candidate post Sep 21'},
+};
+
+// Default holdings — seeds first run only. After that, your edits persist.
+const DEFAULT_HOLDINGS=[
+  {sym:'MTNN',u:1100,a:771.44},{sym:'ZENITHBANK',u:5000,a:120.43},{sym:'GTCO',u:3000,a:134.79},
+  {sym:'DANGCEM',u:146,a:946.60},{sym:'WAPCO',u:500,a:310.78},{sym:'SEPLAT',u:20,a:9088.14},
+  {sym:'ARADEL',u:256,a:1760.89},{sym:'FIDELITYBK',u:5000,a:19.82},{sym:'UBA',u:2250,a:42.50},
+  {sym:'NEM',u:4300,a:32.07},{sym:'TRANSCORP',u:1500,a:46.87},{sym:'NGXGROUP',u:1000,a:147.19},
+  {sym:'STERLINGNG',u:7300,a:7.91},{sym:'NAHCO',u:241,a:186.68},{sym:'PRESCO',u:32,a:2093.29},
+  {sym:'OKOMUOIL',u:16,a:1678.05},{sym:'CUSTODIAN',u:37,a:83.85},
 ];
-const SNAP={MTN:830,ZENITH:117.90,GTCO:129,DANGCEM:1070,WAPCO:317.40,SEPLAT:11363.90,ARADEL:1750,FIDELITY:18.15,UBA:40,NEM:29,TRANSCORP:43,NGXGROUP:118.05,STERLING:7.65,NAHCO:148.50,PRESCO:2300,OKOMU:1418,CUSTODIAN:81.25};
+
+// Snapshot fallback (NGX ticker -> last known close, used if API down)
+const SNAP={MTNN:830,ZENITHBANK:114.95,GTCO:127.9,DANGCEM:963,WAPCO:317.4,SEPLAT:11363.9,ARADEL:1417.5,FIDELITYBK:18.2,UBA:39.85,NEM:29,TRANSCORP:41.5,NGXGROUP:120,STERLINGNG:7.75,NAHCO:148.5,PRESCO:2300,OKOMUOIL:1418,CUSTODIAN:73.15};
+
 const CATS=[
   {d:'2026-07-24',l:'MTN Q2 results',u:'high'},
   {d:'2026-07-27',l:'UBA H1 kill-gate — YoY PBT + impairments',u:'critical'},
@@ -169,38 +244,53 @@ const CATS=[
   {d:'2026-09-21',l:'FTSE Frontier inclusion — $840M–$1.04B passive inflows',u:'anchor'},
 ];
 const SCAPS={Banking:40,Energy:25};
+const LS_KEY='ngx_holdings_v1';
 
-let lp={},lc={},en=1578,bp=null,bc=null,lf=null,live=false;
-const gp=s=>lp[s]||SNAP[s];
-const gc=s=>lc[s]??null;
+// ─── STATE ───
+let holdings=loadHoldings();
+let allPrices={};   // NGX ticker -> {p, c, n}
+let en=1578, bp=null, bc=null, lf=null, live=false;
+
+// ─── PERSISTENCE ───
+function loadHoldings(){
+  try{const s=localStorage.getItem(LS_KEY);if(s){const a=JSON.parse(s);if(Array.isArray(a)&&a.length)return a;}}catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_HOLDINGS));
+}
+function saveHoldings(){try{localStorage.setItem(LS_KEY,JSON.stringify(holdings));}catch(e){}}
+
+// ─── HELPERS ───
+function getMeta(sym){return META[sym]||{n:(allPrices[sym]?.n)||sym,t:'—',sec:'Other',f:0,x:0,fr:0,st:null,nt:''};}
+const gp=s=>allPrices[s]?.p??SNAP[s]??null;
+const gc=s=>allPrices[s]?.c??null;
 const ff=(n,d=2)=>n==null?'—':n.toLocaleString('en-NG',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fm=n=>{if(n==null)return'—';if(n>=1e6)return`₦${(n/1e6).toFixed(2)}M`;if(n>=1e3)return`₦${(n/1e3).toFixed(0)}K`;return`₦${n.toFixed(0)}`};
 const pc=n=>n==null?'—':`${n>=0?'+':''}${n.toFixed(2)}%`;
 const dt=d=>Math.ceil((new Date(d)-new Date())/86400000);
 
+// ─── FETCH ───
 async function go(){
-  document.getElementById('sico').classList.add('spin');
+  const ico=document.getElementById('sico');if(ico)ico.classList.add('spin');
   try{
     const r=await fetch('/api/prices');
     if(!r.ok)throw 0;
     const d=await r.json();
     if(d.ok&&d.prices){
-      for(const[k,v]of Object.entries(d.prices)){
-        if(k==='EUR_NGN'){en=v.price;continue}
-        if(k==='BRENT'){bp=v.price;bc=v.change;continue}
-        lp[k]=v.price;if(v.change!=null)lc[k]=v.change;
-      }
+      allPrices=d.prices;
+      if(typeof d.eurNgn==='number')en=d.eurNgn;
+      if(typeof d.brent==='number'){bp=d.brent;bc=null;}
       lf=d.fetchedAt;live=true;
+      buildTickerDropdown();
     }
   }catch(e){live=false;}
   render();
-  setTimeout(()=>document.getElementById('sico').classList.remove('spin'),700);
+  setTimeout(()=>{if(ico)ico.classList.remove('spin');},700);
 }
 
+// ─── RENDER ───
 function render(){
-  const tl=POS.reduce((s,p)=>s+gp(p.s)*p.u,0);
-  const tc=POS.reduce((s,p)=>s+p.a*p.u,0);
-  const pnl=tl-tc,pp=(pnl/tc)*100;
+  const tl=holdings.reduce((s,p)=>s+(gp(p.sym)||0)*p.u,0);
+  const tc=holdings.reduce((s,p)=>s+p.a*p.u,0);
+  const pnl=tl-tc,pp=tc>0?(pnl/tc)*100:0;
   document.getElementById('mtot').textContent=fm(tl);
   document.getElementById('meur').textContent=`≈ €${ff(tl/en,0)}`;
   const pe=document.getElementById('mpnl');pe.textContent=pc(pp);pe.className='mv '+(pnl>=0?'cg':'cr');
@@ -212,12 +302,12 @@ function render(){
   document.getElementById('mnaico').textContent=dt('2026-07-30')+'d';
   document.getElementById('mftse').textContent=dt('2026-09-21')+'d';
   document.getElementById('fdays').textContent=dt('2026-09-21');
-  document.getElementById('mtime').textContent=lf?new Date(lf).toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'}):'18:10';
-  document.getElementById('msrc').textContent=live?'Live · Yahoo Finance':'CHD snapshot · Jun 23';
-  document.getElementById('dstamp').textContent=live&&lf?`Live · ${new Date(lf).toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'})}`:'CHD snapshot · Jun 23 18:10 WAT';
+  document.getElementById('mtime').textContent=lf?new Date(lf).toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'}):'—';
+  document.getElementById('msrc').textContent=live?'Live · NGX Pulse':'Snapshot';
+  document.getElementById('dstamp').textContent=live&&lf?`Live · ${new Date(lf).toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'})}`:'Snapshot';
 
-  // Badge
-  const brs=POS.filter(p=>p.st&&gp(p.s)<=p.st);
+  // Stop-breach badge
+  const brs=holdings.filter(p=>{const m=getMeta(p.sym);const px=gp(p.sym);return m.st&&px&&px<=m.st;});
   const bb=document.getElementById('bbadge');
   bb.style.display=brs.length?'':'none';
   if(brs.length)bb.textContent=`⚠ ${brs.length} STOP BREACH${brs.length>1?'ES':''}`;
@@ -225,55 +315,61 @@ function render(){
   lb.className='pill '+(live?'pg':'pm');
   lb.innerHTML=`<span class="dot" style="background:${live?'#00c9a7':'#5a7298'};${live?'animation:pulse 2s infinite':''}"></span>${live?'Live':'Snapshot'}`;
 
-  // Portfolio
+  // Position count
+  document.getElementById('poscount').textContent=`${holdings.length} Position${holdings.length===1?'':'s'}`;
+
+  // Portfolio table
   const tb=document.getElementById('ptb'),nl=document.getElementById('nlist');
   tb.innerHTML='';nl.innerHTML='';
   const tcl={T1:'bt1',T2:'bt2',T3:'bt3'};
-  POS.forEach(p=>{
-    const price=gp(p.s),ch=gc(p.s),v=price*p.u,pp2=((price-p.a)/p.a)*100,eu=v/en;
-    const br=p.st&&price<=p.st,nr=p.st&&!br&&((price-p.st)/p.st)<0.05;
+  holdings.forEach(p=>{
+    const m=getMeta(p.sym);
+    const price=gp(p.sym),ch=gc(p.sym);
+    const v=(price||0)*p.u,pp2=price?((price-p.a)/p.a)*100:null,eu=v/en;
+    const br=m.st&&price&&price<=m.st,nr=m.st&&price&&!br&&((price-m.st)/m.st)<0.05;
     let tags='';
-    if(p.f===1)tags+='<span class="badge bftse">FTSE</span>';
-    if(p.f==='p')tags+='<span class="badge bfpot">FTSE?</span>';
-    if(p.x)tags+='<span class="badge bno">NO-EXIT</span>';
-    if(p.fr)tags+='<span class="badge bfrz">FROZEN</span>';
+    if(m.f===1)tags+='<span class="badge bftse">FTSE</span>';
+    if(m.f==='p')tags+='<span class="badge bfpot">FTSE?</span>';
+    if(m.x)tags+='<span class="badge bno">NO-EXIT</span>';
+    if(m.fr)tags+='<span class="badge bfrz">FROZEN</span>';
     let st='<span style="color:#2d4060">—</span>';
     if(br)st='<span class="badge bbr">⚠ BREACH</span>';
-    else if(p.fr)st='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
-    else if(p.x)st='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+    else if(m.fr)st='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+    else if(m.x)st='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
     else if(nr)st='<span style="color:#f0a500;font-size:10px">Near stop</span>';
+    const tierBadge=m.t==='—'?'<span style="color:#2d4060;font-size:11px">—</span>':`<span class="badge ${tcl[m.t]||'bt3'}">${m.t}</span>`;
     const tr=document.createElement('tr');
     if(br)tr.className='brow';
     tr.innerHTML=`
       <td class="l" style="min-width:185px">
         <div style="display:flex;flex-direction:column;gap:3px">
           <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-            <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px">${p.s}</span>${tags}
+            <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px">${p.sym}</span>${tags}
           </div>
-          <span style="font-size:10px;color:#5a7298;font-family:'Inter',sans-serif">${p.n}</span>
+          <span style="font-size:10px;color:#5a7298;font-family:'Inter',sans-serif">${m.n}</span>
         </div>
       </td>
-      <td class="l"><span class="badge ${tcl[p.t]}">${p.t}</span></td>
+      <td class="l">${tierBadge}</td>
       <td class="r" style="color:#5a7298">${p.u.toLocaleString()}</td>
       <td class="r" style="color:#5a7298">₦${ff(p.a)}</td>
-      <td class="r" style="font-weight:600;color:#dde5f0">₦${ff(price)}</td>
+      <td class="r" style="font-weight:600;color:#dde5f0">${price?'₦'+ff(price):'—'}</td>
       <td class="r" style="color:${ch==null?'#2d4060':ch>=0?'#00c9a7':'#ef4444'}">${ch!=null?pc(ch):'—'}</td>
       <td class="r">${fm(v)}</td>
-      <td class="r" style="font-weight:700;color:${pp2>=0?'#00c9a7':'#ef4444'}">${pc(pp2)}</td>
+      <td class="r" style="font-weight:700;color:${pp2==null?'#2d4060':pp2>=0?'#00c9a7':'#ef4444'}">${pp2!=null?pc(pp2):'—'}</td>
       <td class="r" style="color:#5a7298">€${ff(eu,0)}</td>
-      <td class="r" style="color:${br?'#ef4444':nr?'#f0a500':'#2d4060'}">${p.st?`₦${p.st}`:'—'}</td>
+      <td class="r" style="color:${br?'#ef4444':nr?'#f0a500':'#2d4060'}">${m.st?`₦${m.st}`:'—'}</td>
       <td class="r">${st}</td>`;
     tb.appendChild(tr);
-    if(p.nt)nl.innerHTML+=`<div class="nrow"><span class="nsym">${p.s}</span><span class="ntxt">${p.nt}</span></div>`;
+    if(m.nt)nl.innerHTML+=`<div class="nrow"><span class="nsym">${p.sym}</span><span class="ntxt">${m.nt}</span></div>`;
   });
 
   // Sectors
-  const tl2=POS.reduce((s,p)=>s+gp(p.s)*p.u,0);
+  const tl2=holdings.reduce((s,p)=>s+(gp(p.sym)||0)*p.u,0);
   const sm={};
-  POS.forEach(p=>{const v=gp(p.s)*p.u;if(!sm[p.sec])sm[p.sec]={v:0,ss:[]};sm[p.sec].v+=v;sm[p.sec].ss.push(p.s);});
+  holdings.forEach(p=>{const m=getMeta(p.sym);const v=(gp(p.sym)||0)*p.u;if(!sm[m.sec])sm[m.sec]={v:0,ss:[]};sm[m.sec].v+=v;sm[m.sec].ss.push(p.sym);});
   const sg=document.getElementById('sg');sg.innerHTML='';
   Object.entries(sm).sort((a,b)=>b[1].v-a[1].v).forEach(([n,d])=>{
-    const pp=((d.v/tl2)*100),cap=SCAPS[n],br=cap&&pp>cap,bw=cap?Math.min((pp/cap)*100,100):Math.min(pp*2,100);
+    const pp=tl2>0?((d.v/tl2)*100):0,cap=SCAPS[n],br=cap&&pp>cap,bw=cap?Math.min((pp/cap)*100,100):Math.min(pp*2,100);
     const c=document.createElement('div');c.className='sc'+(br?' br':'');
     c.innerHTML=`<div class="sname">${n}${br?' ⚠':''}</div><div class="spct ${br?'cr':'ct'}">${pp.toFixed(1)}%</div>${cap?`<div class="scap ${br?'cr':'cm'}">Cap: ${cap}%${br?' — BREACH':''}</div>`:''}<div class="sbg"><div class="sbar" style="width:${bw}%;background:${br?'#ef4444':'#00c9a7'}"></div></div><div class="snames">${d.ss.join(' · ')}</div>`;
     sg.appendChild(c);
@@ -299,8 +395,82 @@ function tab(n,btn){
   btn.classList.add('active');
 }
 
+// ─── EDIT PORTFOLIO ───
+function openEdit(){renderEditList();document.getElementById('overlay').classList.add('show');}
+function closeEdit(){document.getElementById('overlay').classList.remove('show');document.getElementById('addForm').classList.remove('show');render();}
+
+function renderEditList(){
+  const el=document.getElementById('editList');el.innerHTML='';
+  holdings.forEach((p,i)=>{
+    const m=getMeta(p.sym);
+    const row=document.createElement('div');row.className='erow';
+    row.innerHTML=`
+      <div style="min-width:90px">
+        <div class="esym">${p.sym}</div>
+        <div style="font-size:9px;color:#5a7298">${m.n}</div>
+      </div>
+      <div><div class="einput-label">Units</div><input class="einput" type="number" inputmode="decimal" value="${p.u}" onchange="updateHolding(${i},'u',this.value)"></div>
+      <div><div class="einput-label">Avg ₦</div><input class="einput" type="number" inputmode="decimal" value="${p.a}" onchange="updateHolding(${i},'a',this.value)"></div>
+      <button class="edel" onclick="deleteHolding(${i})">Sell</button>`;
+    el.appendChild(row);
+  });
+}
+
+function updateHolding(i,field,val){
+  const num=parseFloat(val);
+  if(isNaN(num)||num<0)return;
+  holdings[i][field]=num;
+  saveHoldings();
+}
+
+function deleteHolding(i){
+  if(confirm(`Sell all ${holdings[i].sym}? This removes it from your portfolio.`)){
+    holdings.splice(i,1);
+    saveHoldings();
+    renderEditList();
+  }
+}
+
+function toggleAddForm(){document.getElementById('addForm').classList.toggle('show');}
+
+function buildTickerDropdown(){
+  const sel=document.getElementById('addSym');
+  if(!sel||Object.keys(allPrices).length===0)return;
+  const held=new Set(holdings.map(h=>h.sym));
+  const opts=Object.keys(allPrices)
+    .filter(s=>!held.has(s))
+    .sort()
+    .map(s=>`<option value="${s}">${s} — ${allPrices[s].n}</option>`);
+  sel.innerHTML='<option value="">Select a stock…</option>'+opts.join('');
+}
+
+function confirmAdd(){
+  const sym=document.getElementById('addSym').value;
+  const u=parseFloat(document.getElementById('addUnits').value);
+  const a=parseFloat(document.getElementById('addAvg').value);
+  if(!sym){alert('Pick a stock first.');return;}
+  if(isNaN(u)||u<=0){alert('Enter units (how many shares you own).');return;}
+  if(isNaN(a)||a<=0){alert('Enter your average cost per share in ₦.');return;}
+  if(holdings.some(h=>h.sym===sym)){alert('You already hold that stock — edit it above.');return;}
+  holdings.push({sym,u,a});
+  saveHoldings();
+  document.getElementById('addUnits').value='';
+  document.getElementById('addAvg').value='';
+  document.getElementById('addForm').classList.remove('show');
+  buildTickerDropdown();
+  renderEditList();
+}
+
+function resetPortfolio(){
+  if(confirm('Reset to the original 17 holdings? Any stocks you added and any edits will be lost.')){
+    holdings=JSON.parse(JSON.stringify(DEFAULT_HOLDINGS));
+    saveHoldings();
+    buildTickerDropdown();
+    renderEditList();
+  }
+}
+
+// ─── BOOT ───
 go();
 setInterval(()=>{const h=new Date().getHours();if(h>=8&&h<16)go();},300000);
 </script>
-</body>
-</html>
