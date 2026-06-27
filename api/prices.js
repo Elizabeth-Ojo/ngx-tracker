@@ -1,5 +1,6 @@
 // Vercel serverless function — server-side, key stays secret.
-// DEBUG BUILD: add ?debug=1 to the URL to see the raw NGX Pulse structure.
+// NGX Pulse returns { stocks: [...], market: {...} }. Array is at json.stocks.
+// Key read from NGX_PULSE_KEY env var. Never hardcode (public repo).
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9,14 +10,16 @@ export default async function handler(req, res) {
     MTNN: 'MTN', ZENITHBANK: 'ZENITH', GTCO: 'GTCO', DANGCEM: 'DANGCEM',
     WAPCO: 'WAPCO', SEPLAT: 'SEPLAT', ARADEL: 'ARADEL', FIDELITYBK: 'FIDELITY',
     UBA: 'UBA', NEM: 'NEM', TRANSCORP: 'TRANSCORP', NAHCO: 'NAHCO',
-    STERLINGNG: 'STERLING', STERLING: 'STERLING', NGXGROUP: 'NGXGROUP',
-    PRESCO: 'PRESCO', OKOMUOIL: 'OKOMU', CUSTODIAN: 'CUSTODIAN',
+    STERLINGNG: 'STERLING', NGXGROUP: 'NGXGROUP', PRESCO: 'PRESCO',
+    OKOMUOIL: 'OKOMU', CUSTODIAN: 'CUSTODIAN',
   };
 
   const prices = {};
   let source = 'none';
+  let asi = null;
+  let marketStatus = null;
+  let tradeDate = null;
   const KEY = process.env.NGX_PULSE_KEY;
-  const isDebug = req.query?.debug === '1';
 
   if (KEY) {
     try {
@@ -25,39 +28,33 @@ export default async function handler(req, res) {
       });
       if (r.ok) {
         const json = await r.json();
-
-        // DEBUG: dump the structure so we can see real field names
-        if (isDebug) {
-          const rows = Array.isArray(json) ? json
-                     : Array.isArray(json?.data) ? json.data
-                     : null;
-          return res.status(200).json({
-            topLevelKeys: Object.keys(json || {}),
-            isArray: Array.isArray(json),
-            dataIsArray: Array.isArray(json?.data),
-            rowCount: rows ? rows.length : 0,
-            firstRow: rows ? rows[0] : json,
-            firstThreeSymbols: rows ? rows.slice(0, 3).map(x => x.symbol || x.ticker || x.canonical_symbol || Object.keys(x)) : null,
-          });
-        }
-
-        const rows = Array.isArray(json) ? json
-                   : Array.isArray(json?.data) ? json.data
-                   : [];
+        const rows = Array.isArray(json?.stocks) ? json.stocks : [];
         for (const s of rows) {
-          const ticker = s.symbol || s.canonical_symbol || s.ticker;
-          const internal = MAP[ticker];
-          const px = s.current_price ?? s.close ?? s.price ?? s.last_price;
-          const chg = s.change_percentage ?? s.change_percent ?? s.changePercentage ?? null;
+          const internal = MAP[s.symbol];
+          const px = s.current_price;
+          const chg = s.change_percent;
           if (internal && typeof px === 'number') {
             prices[internal] = {
               price: px,
               change: typeof chg === 'number' ? chg : null,
+              prevClose: s.previous_close ?? null,
               source: 'ngxpulse',
               timestamp: new Date().toISOString(),
             };
           }
         }
+        // Pull live ASI / market block
+        if (json?.market) {
+          asi = {
+            value: json.market.asi,
+            change: json.market.pct_change,
+            advancers: json.market.advancers,
+            decliners: json.market.decliners,
+            unchanged: json.market.unchanged,
+          };
+          marketStatus = json.market.market_status || null;
+        }
+        tradeDate = json?.as_of || null;
         source = Object.keys(prices).length > 0 ? 'NGX Pulse' : 'ngxpulse-no-match';
       } else {
         source = `ngxpulse-error-${r.status}`;
@@ -69,7 +66,7 @@ export default async function handler(req, res) {
     source = 'no-key-set';
   }
 
-  // FX
+  // FX: EUR/NGN
   try {
     const fx = await fetch('https://open.er-api.com/v6/latest/EUR', { headers: { 'User-Agent': 'Mozilla/5.0' } });
     if (fx.ok) { const d = await fx.json(); if (d?.rates?.NGN) prices['EUR_NGN'] = { price: d.rates.NGN, source: 'er-api' }; }
@@ -82,5 +79,14 @@ export default async function handler(req, res) {
   } catch (e) {}
 
   const equityCount = Object.keys(prices).filter((k) => k !== 'EUR_NGN' && k !== 'BRENT').length;
-  res.status(200).json({ ok: equityCount > 0, source, count: equityCount, prices, fetchedAt: new Date().toISOString() });
+  res.status(200).json({
+    ok: equityCount > 0,
+    source,
+    count: equityCount,
+    asi,
+    marketStatus,
+    tradeDate,
+    prices,
+    fetchedAt: new Date().toISOString(),
+  });
 }
