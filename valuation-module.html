@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Valuation Ladder">
+<meta name="theme-color" content="#0A0C10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230A0C10'/%3E%3Crect x='5' y='14' width='22' height='4' rx='2' fill='url(%23g)'/%3E%3Ccircle cx='19' cy='16' r='3' fill='%23EAEEF4'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%233FD79C'/%3E%3Cstop offset='.5' stop-color='%23F1C24E'/%3E%3Cstop offset='1' stop-color='%23EF7269'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E">
+<title>The Valuation Ladder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C10; --bg-soft:#0E1117;
+    --surface:#141823; --surface-2:#1A1F2B; --surface-3:#222A38;
+    --line:#29313F; --line-soft:#1E2530;
+    --ink:#EAEEF4; --ink-2:#A6B0BF; --ink-3:#6E7A8A;
+    --cheap:#3FD79C; --fair:#F1C24E; --elevated:#F2965A; --expensive:#EF7269;
+    --accent:#90A0FF;
+    --r:14px; --r-sm:10px;
+    --maxw:920px;
+    --fz-body:15px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    font-size:var(--fz-body); line-height:1.62; letter-spacing:-0.003em;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(1100px 600px at 50% -10%, rgba(144,160,255,0.06), transparent 60%),
+      linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+    background-size:auto, 46px 46px, 46px 46px;
+  }
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 18px 90px}
+
+  /* ---------- header ---------- */
+  header.hero{padding:40px 0 22px}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:0.22em;
+    text-transform:uppercase; color:var(--ink-3); display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--cheap);box-shadow:0 0 12px var(--cheap)}
+  h1.title{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(30px,7vw,46px);
+    line-height:1.02; letter-spacing:-0.025em; margin:14px 0 10px;
+  }
+  h1.title em{font-style:normal; color:var(--ink-2)}
+  .subtitle{color:var(--ink-2); max-width:640px; font-size:16px}
+
+  /* ---------- tab nav ---------- */
+  .tabs-shell{
+    position:sticky; top:0; z-index:20; margin:18px -18px 0; padding:9px 18px;
+    background:linear-gradient(var(--bg) 70%, rgba(10,12,16,0.85));
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--line-soft);
+  }
+  .tabs{display:flex; gap:7px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{
+    flex:0 0 auto; display:inline-flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line); color:var(--ink-2);
+    border-radius:999px; padding:8px 14px; font-size:13.5px; font-weight:500;
+    cursor:pointer; white-space:nowrap; transition:border-color .18s, color .18s, background .18s;
+    font-family:inherit;
+  }
+  .tab:hover{color:var(--ink); border-color:#384151}
+  .tab[aria-selected="true"]{background:var(--surface-2); color:var(--ink); border-color:var(--accent)}
+  .tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .pill{font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase;
+        padding:2px 6px; border-radius:5px; font-weight:500}
+  .pill.b{background:rgba(63,215,156,0.13); color:var(--cheap)}
+  .pill.i{background:rgba(241,194,78,0.13); color:var(--fair)}
+  .pill.a{background:rgba(239,114,105,0.14); color:var(--expensive)}
+
+  /* ---------- panels ---------- */
+  .panel{display:none; padding-top:30px; animation:fade .35s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.panel{animation:none}}
+
+  .sec-head{display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-bottom:6px}
+  .sec-head h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:25px; letter-spacing:-0.02em; margin:0}
+  .lead{color:var(--ink-2); max-width:680px; margin:0 0 22px; font-size:15.5px}
+
+  /* ---------- cards ---------- */
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:20px 22px; margin-bottom:16px}
+  .card h3{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14.5px; letter-spacing:.01em;
+           margin:0 0 10px; display:flex; align-items:center; gap:8px}
+  .card h3 .ic{color:var(--ink-3); font-size:14px}
+  .card p{margin:0 0 10px} .card p:last-child{margin-bottom:0}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media (max-width:680px){.grid2{grid-template-columns:1fr}}
+  .muted{color:var(--ink-2)} .small{font-size:13.5px}
+  b,strong{color:var(--ink); font-weight:600}
+
+  .code{
+    font-family:'JetBrains Mono',monospace; font-size:13.5px; color:#cdd7ff;
+    background:var(--surface-3); border:1px solid var(--line); border-radius:var(--r-sm);
+    padding:11px 14px; margin:12px 0; display:block; letter-spacing:-0.01em;
+  }
+  .code .op{color:var(--accent)}
+
+  /* ---------- calculator ---------- */
+  .calc{
+    background:linear-gradient(180deg,var(--surface-2),var(--surface));
+    border:1px solid var(--line); border-radius:var(--r); padding:20px 22px; margin:18px 0;
+    position:relative; overflow:hidden;
+  }
+  .calc::before{content:""; position:absolute; inset:0 0 auto; height:1px;
+    background:linear-gradient(90deg, transparent, var(--accent), transparent); opacity:.5}
+  .calc-title{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--ink-3); display:flex; align-items:center; gap:8px; margin-bottom:16px}
+  .calc-title .sq{width:7px;height:7px;background:var(--accent);border-radius:2px}
+  .ctrls{display:flex; flex-direction:column; gap:15px; margin-bottom:6px}
+  .ctrl-grid2{display:grid; grid-template-columns:1fr 1fr; gap:15px 22px}
+  @media (max-width:560px){.ctrl-grid2{grid-template-columns:1fr}}
+  .ctrl{display:grid; grid-template-columns:1fr auto; align-items:center; gap:4px 12px}
+  .ctrl label{grid-column:1; font-size:13px; color:var(--ink-2)}
+  .ctrl output{grid-column:2; grid-row:1; font-family:'JetBrains Mono',monospace; font-size:14px;
+    color:var(--ink); font-weight:500; text-align:right; min-width:64px}
+  .ctrl input[type=range]{grid-column:1 / -1; grid-row:2}
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:24px; background:transparent; cursor:pointer; margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{height:4px; border-radius:3px;
+    background:linear-gradient(90deg,var(--accent) var(--fill,40%), var(--line) var(--fill,40%))}
+  input[type=range]::-moz-range-track{height:4px; border-radius:3px; background:var(--line)}
+  input[type=range]::-moz-range-progress{height:4px; border-radius:3px; background:var(--accent)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; margin-top:-7px;
+    width:18px; height:18px; border-radius:50%; background:#EAEEF4; border:3px solid #2b3342;
+    box-shadow:0 0 0 1px var(--accent), 0 2px 6px rgba(0,0,0,.5)}
+  input[type=range]::-moz-range-thumb{width:18px; height:18px; border-radius:50%; background:#EAEEF4;
+    border:3px solid #2b3342; box-shadow:0 0 0 1px var(--accent)}
+  input[type=range]:focus-visible{outline:none}
+  input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 2px var(--accent), 0 0 0 6px rgba(144,160,255,.25)}
+
+  .readout{display:grid; grid-template-columns:auto 1fr; align-items:end; gap:6px 18px;
+    margin-top:18px; padding-top:16px; border-top:1px solid var(--line-soft)}
+  .readout .label{grid-column:1; font-size:12px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.1em;
+    font-family:'JetBrains Mono',monospace}
+  .readout .big{grid-column:1; grid-row:2; font-family:'JetBrains Mono',monospace; font-weight:700;
+    font-size:clamp(34px,9vw,44px); line-height:1; letter-spacing:-0.02em}
+  .readout .verdict-wrap{grid-column:2; grid-row:1 / span 2; text-align:right; align-self:end}
+  .readout .vlabel{font-size:11px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.1em;
+    font-family:'JetBrains Mono',monospace}
+  .readout .verdict{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:18px; line-height:1.15; margin-top:3px}
+
+  .gauge{margin-top:16px}
+  .gauge-track{position:relative; height:9px; border-radius:6px; overflow:hidden; display:flex; background:var(--surface-3)}
+  .gauge-track .z{height:100%}
+  .gauge-marker{position:absolute; top:50%; width:3px; height:19px; border-radius:2px; background:#fff;
+    transform:translate(-50%,-50%); box-shadow:0 0 0 2px var(--bg), 0 0 10px rgba(255,255,255,.6);
+    transition:left .35s cubic-bezier(.2,.7,.2,1)}
+  @media (prefers-reduced-motion:reduce){.gauge-marker{transition:none}}
+  .gauge-labels{display:flex; margin-top:7px}
+  .gauge-labels span{flex:1; font-size:10.5px; color:var(--ink-3); font-family:'JetBrains Mono',monospace; letter-spacing:.03em}
+  .gauge-labels span:last-child{text-align:right}
+  .gauge-labels span:not(:first-child):not(:last-child){text-align:center}
+  .calc-note{margin-top:13px; font-size:13px; color:var(--ink-2); line-height:1.5}
+  .calc-note b{color:var(--ink)}
+
+  .modes{display:inline-flex; background:var(--surface-3); border:1px solid var(--line); border-radius:9px; padding:3px; gap:3px; margin-bottom:4px}
+  .modes button{font-family:inherit; font-size:12.5px; font-weight:500; color:var(--ink-2); background:transparent;
+    border:0; border-radius:6px; padding:5px 13px; cursor:pointer}
+  .modes button[aria-pressed="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .modes button:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+
+  /* ---------- callout (real example) ---------- */
+  .callout{
+    background:linear-gradient(180deg, rgba(144,160,255,0.14), rgba(144,160,255,0.05));
+    border:1px solid rgba(144,160,255,0.35); border-left:3px solid var(--accent);
+    border-radius:var(--r); padding:17px 20px; margin:16px 0;
+  }
+  .callout .tag{font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--accent); margin-bottom:8px}
+  .callout p{margin:0; font-size:14.5px; color:#dfe4f5}
+  .callout p + p{margin-top:9px}
+
+  /* ---------- traps ---------- */
+  .traps{background:var(--bg-soft); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; margin:16px 0}
+  .traps h3{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14.5px; margin:0 0 13px; color:var(--ink)}
+  .trap{display:grid; grid-template-columns:auto 1fr; gap:0 11px; padding:10px 0; border-top:1px solid var(--line-soft)}
+  .trap:first-of-type{border-top:0; padding-top:2px}
+  .chip{font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase;
+    background:rgba(239,114,105,0.16); color:var(--expensive); padding:3px 7px; border-radius:5px; height:fit-content; white-space:nowrap; align-self:start; margin-top:2px}
+  .trap p{margin:0; font-size:13.8px; color:var(--ink-2)} .trap p b{color:var(--ink)}
+
+  /* ---------- buttons / expanders ---------- */
+  .btn{display:inline-flex; align-items:center; gap:7px; background:var(--surface); border:1px solid var(--line);
+    color:var(--ink); font-family:inherit; font-size:13.5px; font-weight:500; padding:9px 15px; border-radius:9px; cursor:pointer; transition:border-color .18s, background .18s}
+  .btn:hover{border-color:var(--accent); background:var(--surface-2)}
+  .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .btn .arr{transition:transform .25s}
+  .btn[aria-expanded="true"] .arr{transform:rotate(90deg)}
+  .reveal{max-height:0; overflow:hidden; transition:max-height .4s ease}
+  .reveal.open{max-height:1600px}
+  @media (prefers-reduced-motion:reduce){.reveal{transition:none}}
+  .reveal-inner{padding-top:14px}
+
+  /* ---------- roadmap ladder ---------- */
+  .ladder{border:1px solid var(--line); border-radius:var(--r); overflow:hidden; margin:18px 0}
+  .rung{display:grid; grid-template-columns:46px 1fr auto; align-items:center; gap:0 14px; width:100%;
+    background:var(--surface); border:0; border-top:1px solid var(--line-soft); padding:15px 18px; cursor:pointer;
+    text-align:left; font-family:inherit; color:var(--ink); transition:background .16s}
+  .rung:first-child{border-top:0}
+  .rung:hover{background:var(--surface-2)}
+  .rung:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+  .rung .num{font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--ink-3); font-weight:500}
+  .rung .body .nm{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px}
+  .rung .body .dx{font-size:12.8px; color:var(--ink-2); margin-top:1px}
+  .rung .go{color:var(--ink-3); font-size:18px; transition:transform .18s, color .18s}
+  .rung:hover .go{color:var(--accent); transform:translateX(3px)}
+  .two-fam{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:18px 0}
+  @media (max-width:680px){.two-fam{grid-template-columns:1fr}}
+  .fam{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px}
+  .fam .k{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); margin-bottom:7px}
+  .fam h4{font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; margin:0 0 8px}
+
+  /* ---------- matrix table ---------- */
+  .matrix{width:100%; border-collapse:collapse; margin:16px 0; font-size:13.5px; border:1px solid var(--line); border-radius:var(--r); overflow:hidden; display:table}
+  .matrix th,.matrix td{padding:11px 14px; text-align:left; border-top:1px solid var(--line-soft); vertical-align:top}
+  .matrix thead th{background:var(--surface-2); font-family:'JetBrains Mono',monospace; font-size:10.5px;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); font-weight:500; border-top:0}
+  .matrix tbody tr{background:var(--surface)}
+  .matrix td:first-child{font-weight:600; color:var(--ink); white-space:nowrap}
+  .matrix td.metrics{color:var(--ink-2)}
+  .matrix .mono{font-family:'JetBrains Mono',monospace; font-size:12.5px}
+  .scroll-x{overflow-x:auto; -webkit-overflow-scrolling:touch}
+
+  /* ---------- checklist ---------- */
+  .check{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:8px 6px; margin:16px 0}
+  .ck{display:flex; gap:12px; align-items:flex-start; width:100%; background:transparent; border:0; border-radius:var(--r-sm);
+    padding:11px 14px; cursor:pointer; text-align:left; font-family:inherit; color:var(--ink-2); font-size:14px; transition:background .15s}
+  .ck:hover{background:var(--surface-2)}
+  .ck:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+  .ck .box{flex:0 0 auto; width:19px; height:19px; border-radius:6px; border:1.5px solid #3a4354; margin-top:1px;
+    display:grid; place-items:center; transition:.16s; color:var(--bg); font-size:12px; font-weight:700}
+  .ck[aria-pressed="true"] .box{background:var(--cheap); border-color:var(--cheap)}
+  .ck[aria-pressed="true"]{color:var(--ink-3); text-decoration:line-through; text-decoration-color:rgba(110,122,138,.5)}
+  .ck-bar{display:flex; align-items:center; gap:12px; padding:6px 14px 12px}
+  .ck-track{flex:1; height:6px; border-radius:4px; background:var(--surface-3); overflow:hidden}
+  .ck-fill{height:100%; width:0; background:var(--cheap); border-radius:4px; transition:width .3s}
+  .ck-count{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink-3)}
+
+  .principle{display:grid; grid-template-columns:auto 1fr; gap:0 14px; padding:12px 0; border-top:1px solid var(--line-soft)}
+  .principle:first-of-type{border-top:0}
+  .principle .n{font-family:'JetBrains Mono',monospace; color:var(--accent); font-size:13px; font-weight:500}
+  .principle p{margin:0; font-size:14px; color:var(--ink-2)} .principle b{color:var(--ink)}
+
+  footer{margin-top:36px; padding-top:18px; border-top:1px solid var(--line-soft); color:var(--ink-3); font-size:12.5px; line-height:1.6}
+  footer .em{color:var(--ink-2)}
+  .hl{color:var(--cheap)} .hl-a{color:var(--accent)}
+  /* ---------- workbench ---------- */
+  .trust{display:flex; gap:11px; align-items:flex-start; background:linear-gradient(180deg,rgba(242,194,78,.10),rgba(242,194,78,.03)); border:1px solid rgba(242,194,78,.35); border-radius:12px; padding:13px 16px; margin:6px 0 20px; font-size:13.2px; color:#f4e6c2; line-height:1.5}
+  .trust .i{color:var(--fair); font-size:15px; flex:0 0 auto} .trust b{color:#fbe9bd}
+  .idrow{display:grid; grid-template-columns:1fr 230px; gap:13px; margin-bottom:14px}
+  @media(max-width:560px){.idrow{grid-template-columns:1fr}}
+  .fields{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:13px; margin:4px 0 6px}
+  .fgrp{grid-column:1/-1; font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3); margin:16px 0 -2px}
+  .fgrp:first-child{margin-top:2px}
+  .field label{display:block; font-size:11.5px; color:var(--ink-2); margin-bottom:5px}
+  .field label .u{color:var(--ink-3)}
+  .field input, .field select, .idrow select, .idrow input{width:100%; background:var(--surface-3); border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:9px 11px; font-family:'JetBrains Mono',monospace; font-size:14px}
+  .idrow input{font-family:'Space Grotesk',sans-serif; font-size:15px}
+  .field input:focus,.field select:focus,.idrow select:focus,.idrow input:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
+  .field.unv input{border-color:var(--fair); box-shadow:0 0 0 1px rgba(242,194,78,.4)}
+  .runbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:10px 0 4px}
+
+  .leadrow{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:6px 0 14px}
+  .leadrow .lab{font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin-right:2px}
+  .lchip{background:var(--surface-2); border:1px solid var(--accent); color:var(--ink); font-size:12px; padding:4px 11px; border-radius:999px; font-weight:500}
+  .lchip.off{border-color:var(--line); color:var(--ink-3)}
+
+  .mgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(225px,1fr)); gap:13px; margin:6px 0 4px}
+  .mcard{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:15px 17px}
+  .mcard.is-lead{border-color:#3a4660; box-shadow:0 0 0 1px rgba(144,160,255,.12)}
+  .mcard .mn{font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); display:flex; justify-content:space-between; align-items:center; gap:8px}
+  .mcard .mn .star{color:var(--accent); font-size:10px; white-space:nowrap}
+  .mcard .mv{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:29px; line-height:1; margin:9px 0 2px; letter-spacing:-.02em}
+  .mcard .mverd{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; margin-bottom:4px}
+  .mcard .mnote{font-size:12px; color:var(--ink-2); line-height:1.45; margin-top:9px}
+  .mcard .gauge{margin-top:8px} .mcard .gauge-labels span{font-size:9px}
+
+  .reverse{background:var(--bg-soft); border:1px dashed var(--line); border-radius:12px; padding:14px 17px; margin:14px 0 4px; font-size:13.5px; color:var(--ink-2); line-height:1.55}
+  .reverse b{color:var(--ink)}
+
+  .da{border:1px solid rgba(239,114,105,.4); background:linear-gradient(180deg,rgba(239,114,105,.06),rgba(239,114,105,.015)); border-radius:14px; padding:16px 20px}
+  .flag{display:grid; grid-template-columns:auto 1fr; gap:0 12px; padding:13px 0; border-top:1px solid var(--line-soft)}
+  .flag:first-child{border-top:0; padding-top:2px}
+  .flag .sev{font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; padding:3px 7px; border-radius:5px; height:fit-content; white-space:nowrap; margin-top:2px}
+  .sev.hi{background:rgba(239,114,105,.18); color:var(--expensive)}
+  .sev.md{background:rgba(242,150,90,.16); color:var(--elevated)}
+  .sev.lo{background:rgba(241,194,78,.13); color:var(--fair)}
+  .flag .ft{font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--ink); font-size:14px}
+  .flag .fb{color:var(--ink-2); font-size:13.3px; margin-top:3px; line-height:1.5}
+  .flag .fv{color:var(--fair); font-size:12.3px; margin-top:5px; font-family:'JetBrains Mono',monospace; line-height:1.45}
+
+  .verdict-box{background:linear-gradient(180deg,var(--surface-2),var(--surface)); border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin:14px 0}
+  .verdict-box .vh{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:17px; margin:0 0 8px; line-height:1.32; color:var(--ink)}
+  .verdict-box p{margin:0 0 11px; color:var(--ink-2); font-size:14px}
+  .verify-list{list-style:none; padding:0; margin:6px 0 12px}
+  .verify-list li{display:grid; grid-template-columns:auto 1fr; gap:9px; padding:7px 0; font-size:13.4px; color:var(--ink); border-top:1px solid var(--line-soft)}
+  .verify-list li:first-child{border-top:0} .verify-list li .tk{color:var(--fair)}
+  .mos{display:flex; gap:10px; align-items:flex-start; background:rgba(63,215,156,.07); border:1px solid rgba(63,215,156,.3); border-radius:10px; padding:11px 14px; font-size:13px; color:#cdeede; margin:6px 0 12px; line-height:1.5}
+  .mos .i{color:var(--cheap); flex:0 0 auto}
+  .disc{font-size:11.5px; color:var(--ink-3); border-top:1px solid var(--line-soft); padding-top:11px; margin-top:4px; line-height:1.6}
+
+  .assist-out{margin:8px 0 2px; font-size:12.5px; color:var(--ink-2)}
+  .assist-out a{color:var(--accent); text-decoration:none; border-bottom:1px solid rgba(144,160,255,.4); margin-right:9px}
+  .assist-out .srcs{margin-top:7px; line-height:1.7}
+  .unv-banner{display:flex; gap:10px; background:rgba(242,194,78,.1); border:1px solid rgba(242,194,78,.4); border-radius:10px; padding:11px 14px; font-size:12.8px; color:#f4e6c2; margin-bottom:10px; line-height:1.5}
+  .unv-banner .i{color:var(--fair); flex:0 0 auto}
+  .spin{display:inline-block; width:12px; height:12px; border:2px solid var(--ink-3); border-top-color:var(--accent); border-radius:50%; animation:sp .7s linear infinite; vertical-align:-1px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .livebox{background:linear-gradient(180deg,rgba(63,215,156,.10),rgba(63,215,156,.03)); border:1px solid rgba(63,215,156,.35); border-radius:12px; padding:14px 16px; margin:8px 0 2px}
+  .livebox .livePE{font-family:'Space Grotesk',sans-serif; font-size:16px; color:var(--ink); line-height:1.45}
+  .livebox .livePE b{color:var(--cheap)}
+  .livebox .asof{font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-3); letter-spacing:.08em; text-transform:uppercase; margin-top:7px}
+  .livebox .srcs{margin-top:6px; line-height:1.8; font-size:12px; color:var(--ink-3)}
+  .livebox .srcs a{color:var(--accent); text-decoration:none; border-bottom:1px solid rgba(144,160,255,.4); margin-right:10px}
+  .livebox .vneed{color:var(--fair); font-size:12px; margin-top:7px; line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span> Equity valuation · NGX edition</div>
+    <h1 class="title">The Valuation Ladder<em>.</em></h1>
+    <p class="subtitle">Analyse any NGX stock through the right valuation lens for its sector — with a built-in devil's-advocate pass — or climb the eight teaching rungs from beginner to advanced. Every example is worked through a Nigerian-market lens.</p>
+  </header>
+
+  <div class="tabs-shell">
+    <div class="tabs" role="tablist" aria-label="Valuation topics">
+      <button class="tab" role="tab" id="t-work" aria-controls="p-work" aria-selected="true" data-panel="work">Analyse a stock</button>
+      <button class="tab" role="tab" id="t-road" aria-controls="p-road" aria-selected="false" data-panel="road">Roadmap</button>
+      <button class="tab" role="tab" id="t-pe" aria-controls="p-pe" aria-selected="false" data-panel="pe">PE ratio <span class="pill b">beginner</span></button>
+      <button class="tab" role="tab" id="t-pbps" aria-controls="p-pbps" aria-selected="false" data-panel="pbps">P/B &amp; P/S <span class="pill b">beginner</span></button>
+      <button class="tab" role="tab" id="t-ev" aria-controls="p-ev" aria-selected="false" data-panel="ev">EV multiples <span class="pill i">interm.</span></button>
+      <button class="tab" role="tab" id="t-dcf" aria-controls="p-dcf" aria-selected="false" data-panel="dcf">DCF <span class="pill i">interm.</span></button>
+      <button class="tab" role="tab" id="t-ddm" aria-controls="p-ddm" aria-selected="false" data-panel="ddm">DDM <span class="pill i">interm.</span></button>
+      <button class="tab" role="tab" id="t-adv" aria-controls="p-adv" aria-selected="false" data-panel="adv">Advanced <span class="pill a">advanced</span></button>
+      <button class="tab" role="tab" id="t-apply" aria-controls="p-apply" aria-selected="false" data-panel="apply">Apply it</button>
+    </div>
+  </div>
+
+  <!-- ========== STOCK WORKBENCH ========== -->
+  <section class="panel active" id="p-work" role="tabpanel" aria-labelledby="t-work" tabindex="0">
+    <div class="sec-head"><h2>Analyse a stock</h2></div>
+    <p class="lead">Enter a stock and its figures. The tool runs every valuation lens that fits the business, then argues against its own result — the devil's-advocate pass — so a cheap-looking number can't quietly mislead you.</p>
+
+    <div class="trust"><span class="i">⚠</span><div>This tool <b>computes and challenges</b> — it does not source data for you. The numbers below are <b>editable placeholders, not facts.</b> Replace them with figures you've verified from the company's accounts, the NGX, or your broker. For anything tied to real capital, trust your verified inputs, never a default.</div></div>
+
+    <div class="idrow">
+      <input id="w-name" type="text" placeholder="Stock name or ticker — e.g. GTCO, MTNN, SEPLAT" autocomplete="off">
+      <select id="w-sector" aria-label="Sector">
+        <option value="banking">Banking</option>
+        <option value="insurance">Insurance</option>
+        <option value="oil">Oil &amp; Gas</option>
+        <option value="cement">Cement &amp; Industrials</option>
+        <option value="consumer">Consumer / FMCG</option>
+        <option value="telecom">Telecom</option>
+        <option value="agric">Agriculture</option>
+        <option value="conglomerate">Conglomerate</option>
+        <option value="other">Services / Other</option>
+      </select>
+    </div>
+    <div class="runbar">
+      <button class="btn" id="w-assist">⟳ Fetch live price + EPS &amp; calculate PE</button>
+      <button class="btn" id="w-verified" style="display:none">✓ I've verified these</button>
+    </div>
+    <div class="assist-out" id="w-assist-out"></div>
+
+    <div class="fields">
+      <div class="fgrp">Price &amp; earnings</div>
+      <div class="field"><label>Share price <span class="u">(₦)</span></label><input id="w-price" type="number" value="25" step="any"></div>
+      <div class="field"><label>Shares outstanding <span class="u">(million)</span></label><input id="w-shares" type="number" value="30000" step="any"></div>
+      <div class="field"><label>Market cap <span class="u">(₦bn, optional)</span></label><input id="w-mcap" type="number" placeholder="auto from shares" step="any"></div>
+      <div class="field"><label>EPS trailing <span class="u">(₦)</span></label><input id="w-epst" type="number" value="6" step="any"></div>
+      <div class="field"><label>EPS forward <span class="u">(₦, optional)</span></label><input id="w-epsf" type="number" value="7" step="any"></div>
+
+      <div class="fgrp">Balance sheet</div>
+      <div class="field"><label>Book value / share <span class="u">(₦)</span></label><input id="w-bvps" type="number" value="30" step="any"></div>
+      <div class="field"><label>Total debt <span class="u">(₦bn)</span></label><input id="w-debt" type="number" value="0" step="any"></div>
+      <div class="field"><label>Cash &amp; equivalents <span class="u">(₦bn)</span></label><input id="w-cash" type="number" value="0" step="any"></div>
+
+      <div class="fgrp">Sales, cash &amp; dividend</div>
+      <div class="field"><label>Revenue <span class="u">(₦bn)</span></label><input id="w-rev" type="number" value="1500" step="any"></div>
+      <div class="field"><label>EBITDA <span class="u">(₦bn, optional)</span></label><input id="w-ebitda" type="number" placeholder="—" step="any"></div>
+      <div class="field"><label>FCF / share <span class="u">(₦, for DCF)</span></label><input id="w-fcf" type="number" placeholder="—" step="any"></div>
+      <div class="field"><label>Dividend / share <span class="u">(₦, optional)</span></label><input id="w-div" type="number" value="3" step="any"></div>
+
+      <div class="fgrp">Assumptions</div>
+      <div class="field"><label>EPS growth <span class="u">(%/yr)</span></label><input id="w-epsg" type="number" value="12" step="any"></div>
+      <div class="field"><label>Dividend growth <span class="u">(%/yr)</span></label><input id="w-divg" type="number" value="8" step="any"></div>
+      <div class="field"><label>Discount rate r <span class="u">(%)</span></label><input id="w-r" type="number" value="22" step="any"></div>
+      <div class="field"><label>Terminal growth <span class="u">(%)</span></label><input id="w-tg" type="number" value="4" step="any"></div>
+    </div>
+
+    <div class="runbar"><button class="btn" id="w-run">Run analysis ↻</button></div>
+
+    <div class="leadrow" id="w-lead"></div>
+    <div class="mgrid" id="w-metrics"></div>
+    <div class="reverse" id="w-reverse"></div>
+
+    <div class="sec-head" style="margin-top:26px"><h2 style="font-size:21px">Devil's advocate</h2><span class="pill a">challenge</span></div>
+    <p class="lead small" style="margin-bottom:12px">The case against the numbers above. Read these before you believe the read.</p>
+    <div class="da" id="w-da"></div>
+
+    <div class="sec-head" style="margin-top:26px"><h2 style="font-size:21px">The read</h2></div>
+    <div class="verdict-box" id="w-verdict"></div>
+  </section>
+
+  <!-- ========== ROADMAP ========== -->
+  <section class="panel" id="p-road" role="tabpanel" aria-labelledby="t-road" tabindex="0">
+    <div class="sec-head"><h2>The roadmap</h2></div>
+    <p class="lead">Valuation is just answering one question with discipline: <b>what is this business worth, and is the price asking too much for it?</b> Every method below is a different route to that answer. They split into two families.</p>
+
+    <div class="two-fam">
+      <div class="fam">
+        <div class="k">Family 01</div>
+        <h4>Relative — multiples</h4>
+        <p class="small muted">Price the company against its peers. PE, P/B, P/S, EV/EBITDA. Fast, market-grounded, and how most desks actually screen. The catch: if the whole sector is mispriced, the multiple inherits that error.</p>
+      </div>
+      <div class="fam">
+        <div class="k">Family 02</div>
+        <h4>Intrinsic — cash flow</h4>
+        <p class="small muted">Build value from the company's own future cash: DCF and DDM. Independent of what the market thinks today. The catch: the answer is only as good as your assumptions, and small inputs swing it hard.</p>
+      </div>
+    </div>
+
+    <p class="lead small">Climb the rungs in order, or jump to any one. Each rung tells you what it measures, who it suits, and where it lies to you.</p>
+
+    <div class="ladder" id="ladder">
+      <button class="rung" data-go="pe"><span class="num">01</span><span class="body"><div class="nm">PE ratio <span class="pill b">beginner</span></div><div class="dx">Price per naira of earnings. The default screen.</div></span><span class="go">→</span></button>
+      <button class="rung" data-go="pbps"><span class="num">02</span><span class="body"><div class="nm">P/B &amp; P/S <span class="pill b">beginner</span></div><div class="dx">For banks, asset-heavy firms, and companies not yet profitable.</div></span><span class="go">→</span></button>
+      <button class="rung" data-go="ev"><span class="num">03</span><span class="body"><div class="nm">EV multiples <span class="pill i">intermediate</span></div><div class="dx">PE that respects debt. EV/EBITDA and friends.</div></span><span class="go">→</span></button>
+      <button class="rung" data-go="dcf"><span class="num">04</span><span class="body"><div class="nm">DCF <span class="pill i">intermediate</span></div><div class="dx">Value as the present worth of all future cash.</div></span><span class="go">→</span></button>
+      <button class="rung" data-go="ddm"><span class="num">05</span><span class="body"><div class="nm">DDM <span class="pill i">intermediate</span></div><div class="dx">Value a steady dividend payer off its payout.</div></span><span class="go">→</span></button>
+      <button class="rung" data-go="adv"><span class="num">06</span><span class="body"><div class="nm">Advanced <span class="pill a">advanced</span></div><div class="dx">PEG, reverse valuation, sum-of-the-parts, margin of safety.</div></span><span class="go">→</span></button>
+      <button class="rung" data-go="apply"><span class="num">07</span><span class="body"><div class="nm">Apply it</div><div class="dx">Pick the right tool per business and run the full checklist.</div></span><span class="go">→</span></button>
+    </div>
+  </section>
+
+  <!-- ========== PE ========== -->
+  <section class="panel" id="p-pe" role="tabpanel" aria-labelledby="t-pe" tabindex="0">
+    <div class="sec-head"><h2>PE ratio</h2><span class="pill b">beginner</span></div>
+    <p class="lead">Price-to-earnings is the most widely quoted valuation metric in the world. Understanding it properly, flaws included, is foundational.</p>
+
+    <div class="card">
+      <h3><span class="ic">▦</span> What it is</h3>
+      <p>The PE ratio tells you how much investors are willing to pay for each naira (or dollar) of earnings.</p>
+      <code class="code">PE <span class="op">=</span> Share price <span class="op">÷</span> Earnings per share (EPS)</code>
+      <p class="muted">A PE of 15 means investors are paying ₦15 for every ₦1 of annual profit the company makes. Think of it as years of earnings — at PE 15, you are paying for 15 years of current earnings.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3><span class="ic">◴</span> Trailing vs forward PE</h3>
+        <p class="muted"><b>Trailing PE</b> uses the last 12 months of actual reported EPS. Based on known facts: more reliable, but backward-looking.</p>
+        <p class="muted"><b>Forward PE</b> uses the next 12 months of estimated EPS. More relevant for valuation, but it depends on analyst forecasts being accurate.</p>
+        <p class="muted">Always state which one you are using. They can look very different, especially for fast-growing or recovering businesses.</p>
+      </div>
+      <div class="card">
+        <h3><span class="ic">▤</span> How to interpret it</h3>
+        <p class="muted"><b>Low PE</b> (below sector average) could mean undervalued — but could also mean the market is pricing in declining earnings. Always ask why.</p>
+        <p class="muted"><b>High PE</b> means the market expects strong earnings growth. The question is whether that growth will materialise.</p>
+        <p class="muted"><b>Negative PE</b> means the company is loss-making. PE is meaningless here — use other metrics.</p>
+      </div>
+    </div>
+
+    <div class="calc" data-calc="pe">
+      <div class="calc-title"><span class="sq"></span> Interactive PE calculator</div>
+      <div class="ctrls">
+        <div class="ctrl"><label for="pe-price">Share price (₦)</label><output id="o-pe-price" data-out="price"></output><input id="pe-price" type="range" data-field="price" min="1" max="2000" step="1" value="800"></div>
+        <div class="ctrl"><label for="pe-eps">EPS (₦) — drag below zero to see a loss</label><output id="o-pe-eps" data-out="eps"></output><input id="pe-eps" type="range" data-field="eps" min="-50" max="300" step="1" value="53"></div>
+      </div>
+      <div class="readout">
+        <div class="label">PE ratio</div>
+        <div class="big" data-main></div>
+        <div class="verdict-wrap"><div class="vlabel">Interpretation</div><div class="verdict" data-verdict></div></div>
+      </div>
+      <div class="gauge" data-gauge></div>
+      <div class="calc-note" data-note></div>
+    </div>
+
+    <div class="callout">
+      <div class="tag">Real example — MTNN</div>
+      <p>MTNN: price ₦800, FY2025 EPS ₦53.07 → trailing PE = <b>15.1x</b>. Nigerian telecom peers average 18–22x, so on this metric MTNN looks modestly undervalued.</p>
+      <p>But remember: FY2025 was the first profit after a ₦399bn loss year. The PE is low partly because EPS is recovering from a very low base. The forward PE on FY2026 estimated EPS matters far more here.</p>
+    </div>
+
+    <div class="traps">
+      <h3>⚠ PE traps — common mistakes</h3>
+      <div class="trap"><span class="chip">trap 1</span><p><b>Comparing PE across different sectors.</b> A bank at PE 8x is not cheaper than a tech company at PE 30x. Growth rates, capital requirements and risks are fundamentally different. Always compare within sector.</p></div>
+      <div class="trap"><span class="chip">trap 2</span><p><b>One-off items distorting EPS.</b> UACN's PE of 50x looked alarming — but EPS was crushed by ₦21bn of one-off CHI acquisition costs. Normalised PE was far lower. Always read the notes.</p></div>
+      <div class="trap"><span class="chip">trap 3</span><p><b>Cyclical stocks at peak earnings.</b> Mining and oil companies look cheap at low PE when earnings peak — but that is exactly when you should be cautious, not greedy.</p></div>
+      <div class="trap"><span class="chip">trap 4</span><p><b>Ignoring debt.</b> Two companies can have identical PE ratios but one carries massive debt. PE ignores the balance sheet entirely. Always pair it with EV/EBITDA.</p></div>
+    </div>
+
+    <button class="btn" id="fwd-btn" aria-expanded="false" aria-controls="fwd-panel"><span class="arr">▸</span> Go deeper on forward PE</button>
+    <div class="reveal" id="fwd-panel"><div class="reveal-inner">
+      <div class="card">
+        <h3>Why forward PE wins for a recovering company</h3>
+        <p class="muted">Trailing PE looks backward. For a business climbing out of a loss, last year's depressed EPS makes the trailing multiple noisy — sometimes flatteringly low, sometimes meaninglessly high.</p>
+        <p class="muted">Take the MTNN case. At ₦800 the trailing PE is 15.1x on FY2025 EPS of ₦53.07. But if FY2026 EPS recovers toward, say, <b>₦100</b> as the naira stabilises (illustrative, not a forecast), the forward PE drops to roughly:</p>
+        <code class="code">800 <span class="op">÷</span> 100  <span class="op">=</span>  8.0x forward</code>
+        <p class="muted">Same price, very different story — 8x forward versus 15x trailing. The market is not valuing what the company earned; it is valuing what it is about to earn. For turnarounds, banks coming off a provisioning cycle, or anyone with a low earnings base, <b>forward is the honest number</b> — as long as you trust the estimate behind it.</p>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ========== P/B & P/S ========== -->
+  <section class="panel" id="p-pbps" role="tabpanel" aria-labelledby="t-pbps" tabindex="0">
+    <div class="sec-head"><h2>P/B &amp; P/S</h2><span class="pill b">beginner</span></div>
+    <p class="lead">When earnings are unreliable or absent, two cousins of PE step in: price-to-book for asset-heavy businesses, and price-to-sales for companies not yet making money.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Price-to-Book (P/B)</h3>
+        <code class="code">P/B <span class="op">=</span> Share price <span class="op">÷</span> Book value per share</code>
+        <p class="muted">Book value is what's left for shareholders on the balance sheet — assets minus liabilities. P/B compares the market price to that accounting net worth.</p>
+        <p class="muted"><b>Best for banks and asset-heavy firms</b>, where the balance sheet <em>is</em> the business. Nigerian banks frequently trade below 1.0x book — GTCO, Zenith and peers have spent long stretches priced under their own net assets.</p>
+      </div>
+      <div class="card">
+        <h3>Price-to-Sales (P/S)</h3>
+        <code class="code">P/S <span class="op">=</span> Market cap <span class="op">÷</span> Annual revenue</code>
+        <p class="muted">Revenue is much harder to manipulate than earnings, and it exists even when profit doesn't.</p>
+        <p class="muted"><b>Best for high-growth or pre-profit companies</b> where PE is negative or meaningless. The fatal flaw: P/S completely ignores whether those sales make money. A loss-making firm and a fat-margin one can share a P/S.</p>
+      </div>
+    </div>
+
+    <div class="calc" data-calc="pb">
+      <div class="calc-title"><span class="sq"></span> P/B calculator</div>
+      <div class="ctrl-grid2">
+        <div class="ctrl"><label for="pb-price">Share price (₦)</label><output data-out="price"></output><input id="pb-price" type="range" data-field="price" min="1" max="200" step="0.5" value="18"></div>
+        <div class="ctrl"><label for="pb-bv">Book value / share (₦)</label><output data-out="bv"></output><input id="pb-bv" type="range" data-field="bv" min="1" max="200" step="0.5" value="22"></div>
+      </div>
+      <div class="readout">
+        <div class="label">P/B ratio</div><div class="big" data-main></div>
+        <div class="verdict-wrap"><div class="vlabel">Interpretation</div><div class="verdict" data-verdict></div></div>
+      </div>
+      <div class="gauge" data-gauge></div>
+      <div class="calc-note" data-note></div>
+    </div>
+
+    <div class="calc" data-calc="ps">
+      <div class="calc-title"><span class="sq"></span> P/S calculator</div>
+      <div class="ctrl-grid2">
+        <div class="ctrl"><label for="ps-mc">Market cap (₦bn)</label><output data-out="mc"></output><input id="ps-mc" type="range" data-field="mc" min="10" max="5000" step="10" value="600"></div>
+        <div class="ctrl"><label for="ps-rev">Annual revenue (₦bn)</label><output data-out="rev"></output><input id="ps-rev" type="range" data-field="rev" min="10" max="5000" step="10" value="300"></div>
+      </div>
+      <div class="readout">
+        <div class="label">P/S ratio</div><div class="big" data-main></div>
+        <div class="verdict-wrap"><div class="vlabel">Interpretation</div><div class="verdict" data-verdict></div></div>
+      </div>
+      <div class="gauge" data-gauge></div>
+      <div class="calc-note" data-note></div>
+    </div>
+
+    <div class="traps">
+      <h3>⚠ Traps</h3>
+      <div class="trap"><span class="chip">P/B</span><p><b>Book value can be fiction.</b> It ignores intangibles (a software firm's real worth) and assumes the assets are worth their stated value. A bank's book is only as good as its loan book — discount it if bad debts are lurking.</p></div>
+      <div class="trap"><span class="chip">P/S</span><p><b>Sales without margins are vanity.</b> Two firms at P/S of 2x are not comparable if one converts 30% to profit and the other loses money on every sale. Never use P/S without checking the margin alongside it.</p></div>
+    </div>
+  </section>
+
+  <!-- ========== EV MULTIPLES ========== -->
+  <section class="panel" id="p-ev" role="tabpanel" aria-labelledby="t-ev" tabindex="0">
+    <div class="sec-head"><h2>EV multiples</h2><span class="pill i">intermediate</span></div>
+    <p class="lead">PE's biggest blind spot is debt. Enterprise value fixes it by valuing the <b>whole business</b> — what it would cost to buy outright, debt and all — not just the equity slice.</p>
+
+    <div class="card">
+      <h3>What enterprise value is</h3>
+      <code class="code">EV <span class="op">=</span> Market cap <span class="op">+</span> Total debt <span class="op">−</span> Cash</code>
+      <p class="muted">If you bought the entire company, you'd pay for the equity, inherit its debt, but pocket its cash. That net figure is what the business truly costs. EV multiples then divide it by a profit measure:</p>
+      <p class="muted small"><b>EV/EBITDA</b> — the workhorse. Strips out financing and accounting noise, so you can compare companies with very different debt loads. &nbsp;<b>EV/EBIT</b> — stricter, counts depreciation. &nbsp;<b>EV/Sales</b> — for the pre-profit case.</p>
+    </div>
+
+    <div class="calc" data-calc="ev">
+      <div class="calc-title"><span class="sq"></span> EV/EBITDA calculator</div>
+      <div class="ctrl-grid2">
+        <div class="ctrl"><label for="ev-mc">Market cap (₦bn)</label><output data-out="mc"></output><input id="ev-mc" type="range" data-field="mc" min="10" max="5000" step="10" value="600"></div>
+        <div class="ctrl"><label for="ev-debt">Total debt (₦bn)</label><output data-out="debt"></output><input id="ev-debt" type="range" data-field="debt" min="0" max="3000" step="10" value="200"></div>
+        <div class="ctrl"><label for="ev-cash">Cash (₦bn)</label><output data-out="cash"></output><input id="ev-cash" type="range" data-field="cash" min="0" max="2000" step="10" value="50"></div>
+        <div class="ctrl"><label for="ev-ebitda">EBITDA (₦bn)</label><output data-out="ebitda"></output><input id="ev-ebitda" type="range" data-field="ebitda" min="5" max="1000" step="5" value="120"></div>
+      </div>
+      <div class="readout">
+        <div class="label">EV / EBITDA</div><div class="big" data-main></div>
+        <div class="verdict-wrap"><div class="vlabel">Interpretation</div><div class="verdict" data-verdict></div></div>
+      </div>
+      <div class="gauge" data-gauge></div>
+      <div class="calc-note" data-note></div>
+    </div>
+
+    <div class="callout">
+      <div class="tag">Why it matters on the NGX</div>
+      <p>Take a leveraged name like Seplat. On PE it can look ordinary, but it carries real debt. EV folds that debt into the price tag, so EV/EBITDA shows the true cost of owning the cash flows. For capital-heavy Nigerian names — cement, oil, telecoms infrastructure — EV multiples are usually fairer than PE.</p>
+    </div>
+
+    <div class="traps">
+      <h3>⚠ Traps</h3>
+      <div class="trap"><span class="chip">trap 1</span><p><b>EBITDA is not cash flow.</b> It ignores capex, working capital, interest and tax. For a cement or oil business that reinvests heavily, EBITDA flatters reality — a lot of it never reaches shareholders.</p></div>
+      <div class="trap"><span class="chip">trap 2</span><p><b>Mind the debt direction.</b> Net cash (more cash than debt) makes EV smaller than market cap. Heavy debt makes EV balloon. The same EBITDA can look cheap or expensive depending entirely on the balance sheet you bolted on.</p></div>
+    </div>
+  </section>
+
+  <!-- ========== DCF ========== -->
+  <section class="panel" id="p-dcf" role="tabpanel" aria-labelledby="t-dcf" tabindex="0">
+    <div class="sec-head"><h2>DCF</h2><span class="pill i">intermediate</span></div>
+    <p class="lead">A discounted cash flow ignores the market entirely and asks the purest question: what is all the future cash this business will generate worth <b>in today's money?</b></p>
+
+    <div class="card">
+      <h3>The idea in one line</h3>
+      <p class="muted">A naira next year is worth less than a naira today — you could have invested today's naira. DCF projects the company's free cash flow for a few years, adds a <em>terminal value</em> for everything after, and discounts it all back at a rate that reflects risk.</p>
+      <code class="code">Value <span class="op">=</span> Σ ( future cash flow <span class="op">÷</span> (1 + r)<sup>year</sup> )  <span class="op">+</span>  terminal value</code>
+      <p class="muted small">Three inputs decide everything: the <b>cash flow</b>, the <b>growth rate</b>, and the <b>discount rate (r)</b> — your required return. In Nigeria, r is high: inflation, naira risk and rates push it past 20%, and that quietly crushes the value of cash arriving years from now.</p>
+    </div>
+
+    <div class="calc" data-calc="dcf">
+      <div class="calc-title"><span class="sq"></span> Mini DCF — value per share</div>
+      <div class="ctrl-grid2">
+        <div class="ctrl"><label for="dcf-fcf">Next-year FCF / share (₦)</label><output data-out="fcf"></output><input id="dcf-fcf" type="range" data-field="fcf" min="1" max="300" step="1" value="60"></div>
+        <div class="ctrl"><label for="dcf-g">Growth, yrs 1–5 (%)</label><output data-out="g"></output><input id="dcf-g" type="range" data-field="g" min="-5" max="40" step="0.5" value="12"></div>
+        <div class="ctrl"><label for="dcf-gt">Terminal growth (%)</label><output data-out="gt"></output><input id="dcf-gt" type="range" data-field="gt" min="0" max="12" step="0.5" value="4"></div>
+        <div class="ctrl"><label for="dcf-r">Discount rate r (%)</label><output data-out="r"></output><input id="dcf-r" type="range" data-field="r" min="8" max="40" step="0.5" value="22"></div>
+        <div class="ctrl"><label for="dcf-price">Current price (₦)</label><output data-out="price"></output><input id="dcf-price" type="range" data-field="price" min="1" max="2000" step="1" value="800"></div>
+      </div>
+      <div class="readout">
+        <div class="label">Intrinsic value / share</div><div class="big" data-main></div>
+        <div class="verdict-wrap"><div class="vlabel">vs price</div><div class="verdict" data-verdict></div></div>
+      </div>
+      <div class="gauge" data-gauge></div>
+      <div class="calc-note" data-note></div>
+    </div>
+
+    <div class="callout">
+      <div class="tag">Feel the sensitivity</div>
+      <p>Drag the discount rate from 22% down to 14% and watch the value leap. That single slider — not the company's actual performance — often moves a DCF more than anything else. It's why two honest analysts can value the same Nigerian stock 40% apart. DCF is a thinking tool, not a price tag.</p>
+    </div>
+
+    <div class="traps">
+      <h3>⚠ Traps</h3>
+      <div class="trap"><span class="chip">trap 1</span><p><b>False precision.</b> A DCF spits out ₦412.68 and feels authoritative. It isn't. Change r by two points and it's a different number. Treat the output as a range, never a point.</p></div>
+      <div class="trap"><span class="chip">trap 2</span><p><b>Terminal value dominates.</b> Often half or more of the answer sits in the terminal value — a guess about the far future. Watch the "terminal share" readout above; when it's 60%+, you're mostly valuing speculation.</p></div>
+      <div class="trap"><span class="chip">trap 3</span><p><b>Garbage in, garbage out.</b> It's easy to reverse-engineer the inputs until the DCF agrees with the price you wanted. Set your assumptions first, then look at the answer.</p></div>
+    </div>
+  </section>
+
+  <!-- ========== DDM ========== -->
+  <section class="panel" id="p-ddm" role="tabpanel" aria-labelledby="t-ddm" tabindex="0">
+    <div class="sec-head"><h2>DDM</h2><span class="pill i">intermediate</span></div>
+    <p class="lead">For a company that pays a steady, growing dividend, you can value it off that payout alone. The dividend discount model is a DCF stripped down to the cash that actually reaches you.</p>
+
+    <div class="card">
+      <h3>The Gordon Growth Model</h3>
+      <code class="code">Value <span class="op">=</span> Next year's dividend <span class="op">÷</span> ( r <span class="op">−</span> g )</code>
+      <p class="muted">Where <b>r</b> is your required return and <b>g</b> is the dividend's long-run growth rate. The model only works when <b>g is below r</b> — a dividend growing faster than your discount rate forever would be worth infinity, which is the model politely telling you the assumption is wrong.</p>
+      <p class="muted small"><b>Tailor-made for the NGX dividend payers.</b> Nigerian banks and names like Dangote Cement are dividend machines with long payout histories — exactly the stable, predictable profile the DDM was built for.</p>
+    </div>
+
+    <div class="calc" data-calc="ddm">
+      <div class="calc-title"><span class="sq"></span> Gordon Growth calculator</div>
+      <div class="ctrl-grid2">
+        <div class="ctrl"><label for="ddm-d">Next dividend / share (₦)</label><output data-out="d"></output><input id="ddm-d" type="range" data-field="d" min="0.5" max="50" step="0.5" value="5"></div>
+        <div class="ctrl"><label for="ddm-r">Required return r (%)</label><output data-out="r"></output><input id="ddm-r" type="range" data-field="r" min="6" max="40" step="0.5" value="20"></div>
+        <div class="ctrl"><label for="ddm-g">Dividend growth g (%)</label><output data-out="g"></output><input id="ddm-g" type="range" data-field="g" min="0" max="30" step="0.5" value="8"></div>
+        <div class="ctrl"><label for="ddm-price">Current price (₦)</label><output data-out="price"></output><input id="ddm-price" type="range" data-field="price" min="1" max="500" step="1" value="40"></div>
+      </div>
+      <div class="readout">
+        <div class="label">Fair value / share</div><div class="big" data-main></div>
+        <div class="verdict-wrap"><div class="vlabel">vs price</div><div class="verdict" data-verdict></div></div>
+      </div>
+      <div class="gauge" data-gauge></div>
+      <div class="calc-note" data-note></div>
+    </div>
+
+    <div class="traps">
+      <h3>⚠ Traps</h3>
+      <div class="trap"><span class="chip">trap 1</span><p><b>The r − g spread is everything.</b> As g creeps toward r, the denominator shrinks and the value explodes. A model this sensitive to two estimates demands conservative, defensible inputs.</p></div>
+      <div class="trap"><span class="chip">trap 2</span><p><b>No dividend, no model.</b> Useless for growth companies that reinvest everything, and dangerous for firms paying a dividend they can't sustain. Check that the payout is actually covered by earnings.</p></div>
+    </div>
+  </section>
+
+  <!-- ========== ADVANCED ========== -->
+  <section class="panel" id="p-adv" role="tabpanel" aria-labelledby="t-adv" tabindex="0">
+    <div class="sec-head"><h2>Advanced</h2><span class="pill a">advanced</span></div>
+    <p class="lead">The pros rarely trust one number. They triangulate cheap-vs-expensive with what-is-priced-in, and they build a margin of safety into the answer.</p>
+
+    <div class="card">
+      <h3>Adjust the multiple for growth — PEG</h3>
+      <p class="muted">A raw PE punishes fast growers and flatters slow ones. PEG divides PE by the earnings growth rate to level the field. A rule of thumb from Peter Lynch: <b>PEG around 1.0 is fair</b> — a PE of 30 is reasonable if earnings grow 30%.</p>
+      <code class="code">PEG <span class="op">=</span> PE <span class="op">÷</span> earnings growth rate (%)</code>
+    </div>
+
+    <div class="calc" data-calc="peg">
+      <div class="calc-title"><span class="sq"></span> PEG calculator</div>
+      <div class="ctrl-grid2">
+        <div class="ctrl"><label for="peg-pe">PE ratio</label><output data-out="pe"></output><input id="peg-pe" type="range" data-field="pe" min="1" max="60" step="0.5" value="15"></div>
+        <div class="ctrl"><label for="peg-g">Earnings growth (%)</label><output data-out="g"></output><input id="peg-g" type="range" data-field="g" min="1" max="50" step="0.5" value="12"></div>
+      </div>
+      <div class="readout">
+        <div class="label">PEG ratio</div><div class="big" data-main></div>
+        <div class="verdict-wrap"><div class="vlabel">Interpretation</div><div class="verdict" data-verdict></div></div>
+      </div>
+      <div class="gauge" data-gauge></div>
+      <div class="calc-note" data-note></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Reverse the valuation</h3>
+        <p class="muted">Instead of computing a value, flip it: take today's price and solve for the growth or return the market is <em>assuming</em>. If the price implies 25% growth forever and the company has never grown above 10%, the market is dreaming — and you have your edge.</p>
+        <p class="muted small">This is the single most useful advanced move: <b>valuation becomes a question about expectations, not a price target.</b></p>
+      </div>
+      <div class="card">
+        <h3>Sum-of-the-parts</h3>
+        <p class="muted">For conglomerates — think Transcorp or UAC — one blended multiple hides everything. Value each division on its own appropriate metric, add them, subtract net debt and a holding-company discount. The parts are often worth more than the quoted whole.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="tag">Margin of safety</div>
+      <p>Every method above is an estimate dressed as a number. The discipline that survives that uncertainty is simple: only buy when price sits comfortably <b>below</b> your range of fair value — 20–30% below for a Nigerian risk profile. The gap is not greed; it's the room your assumptions are allowed to be wrong in.</p>
+    </div>
+  </section>
+
+  <!-- ========== APPLY IT ========== -->
+  <section class="panel" id="p-apply" role="tabpanel" aria-labelledby="t-apply" tabindex="0">
+    <div class="sec-head"><h2>Apply it</h2></div>
+    <p class="lead">The skill isn't knowing the metrics — it's choosing the right one for the business in front of you, then refusing to skip a step.</p>
+
+    <h3 style="font-family:'Space Grotesk';font-weight:600;font-size:15px;margin:0 0 4px">Match the tool to the business</h3>
+    <div class="scroll-x">
+      <table class="matrix">
+        <thead><tr><th>Business type</th><th>Lead with</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Banks &amp; insurers</td><td class="metrics mono">P/B · PE · DDM</td><td>The balance sheet is the business, and they pay reliable dividends.</td></tr>
+          <tr><td>Oil &amp; cement</td><td class="metrics mono">EV/EBITDA · P/CF</td><td>Heavy debt and capex; EV respects the leverage, PE doesn't.</td></tr>
+          <tr><td>Consumer staples</td><td class="metrics mono">PE · EV/EBITDA · DDM</td><td>Stable earnings and payouts make every method usable.</td></tr>
+          <tr><td>High-growth / tech</td><td class="metrics mono">P/S · fwd PE · PEG</td><td>Profits are thin or absent; price growth against revenue.</td></tr>
+          <tr><td>Conglomerates</td><td class="metrics mono">Sum-of-the-parts</td><td>A blended multiple hides what each division is really worth.</td></tr>
+          <tr><td>Loss-making / turnaround</td><td class="metrics mono">P/S · EV/Sales · fwd PE</td><td>Trailing earnings are negative or meaningless — look ahead.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="font-family:'Space Grotesk';font-weight:600;font-size:15px;margin:22px 0 2px">The valuation checklist</h3>
+    <p class="small muted" style="margin:0 0 6px">Tick each step before you form a view. Resets each session.</p>
+    <div class="check" id="checklist">
+      <button class="ck" aria-pressed="false"><span class="box">✓</span><span>Identified the business type and picked the right lead metric for it</span></button>
+      <button class="ck" aria-pressed="false"><span class="box">✓</span><span>Compared the multiple <b>within the sector</b>, not across sectors</span></button>
+      <button class="ck" aria-pressed="false"><span class="box">✓</span><span>Checked earnings for one-off items and normalised EPS where needed</span></button>
+      <button class="ck" aria-pressed="false"><span class="box">✓</span><span>Looked at the balance sheet — used an EV metric if debt is meaningful</span></button>
+      <button class="ck" aria-pressed="false"><span class="box">✓</span><span>Stated whether I'm using trailing or forward figures</span></button>
+      <button class="ck" aria-pressed="false"><span class="box">✓</span><span>Cross-checked with a second method (a multiple <em>and</em> a cash-flow view)</span></button>
+      <button class="ck" aria-pressed="false"><span class="box">✓</span><span>Asked what growth or return the current price is <b>implying</b></span></button>
+      <button class="ck" aria-pressed="false"><span class="box">✓</span><span>Required a margin of safety below my fair-value range before buying</span></button>
+      <div class="ck-bar"><div class="ck-track"><div class="ck-fill" id="ck-fill"></div></div><span class="ck-count" id="ck-count">0 / 8</span></div>
+    </div>
+
+    <h3 style="font-family:'Space Grotesk';font-weight:600;font-size:15px;margin:24px 0 2px">The discipline</h3>
+    <div class="card">
+      <div class="principle"><span class="n">01</span><p><b>No single number is the answer.</b> A valuation is a mosaic of methods that agree, or a disagreement worth understanding.</p></div>
+      <div class="principle"><span class="n">02</span><p><b>The metric must fit the business.</b> The fastest way to be wrong is to apply PE to a bank or DCF to a wild guess.</p></div>
+      <div class="principle"><span class="n">03</span><p><b>Always ask "what is the market assuming?"</b> Then decide, honestly, whether you disagree enough to act.</p></div>
+      <div class="principle"><span class="n">04</span><p><b>Cheap can stay cheap.</b> A low multiple is the start of the question, never the end of it.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p class="em">An interactive learning tool. The MTNN figures reproduce the worked example shown; all other numbers are illustrative defaults to demonstrate the method, not current market data or a recommendation.</p>
+    <p>Educational only — this isn't investment advice, and I'm not a financial adviser. Verify any figure against primary sources before acting on it.</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var naira = function(n){ return '₦' + Math.round(n).toLocaleString('en-NG'); };
+  var naira1 = function(n){ return '₦' + n.toLocaleString('en-NG',{minimumFractionDigits:n%1?2:0, maximumFractionDigits:2}); };
+  var bn = function(n){ return '₦' + Math.round(n).toLocaleString('en-NG') + 'bn'; };
+  var pct = function(n){ return n.toFixed(1) + '%'; };
+  var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+
+  var ZONE = { cheap:'#3FD79C', fair:'#F1C24E', elevated:'#F2965A', expensive:'#EF7269' };
+
+  // verdict band helper: bands ascending, last max = Infinity
+  function band(v, bands){ for(var i=0;i<bands.length;i++){ if(v < bands[i].max) return bands[i]; } return bands[bands.length-1]; }
+
+  var STD = [
+    {l:'Cheap', c:'cheap'}, {l:'Fair', c:'fair'}, {l:'Elevated', c:'elevated'}, {l:'Expensive', c:'expensive'}
+  ];
+  var INTRINSIC = [
+    {l:'Overvalued', c:'expensive'}, {l:'Fair', c:'fair'}, {l:'Undervalued', c:'cheap'}
+  ];
+
+  var PE_BANDS = [
+    {max:8,  l:'Undervalued', c:'cheap',     note:'Below the telecom peer band — cheap on this metric, but ask <b>why</b> before celebrating.'},
+    {max:14, l:'Fair value', c:'fair',       note:'A normal range. Only meaningful compared against the sector average.'},
+    {max:20, l:'Fair to slightly elevated', c:'fair', note:'Reasonable, leaning full. For a recovering business, forward EPS matters more than this trailing number.'},
+    {max:28, l:'Elevated', c:'elevated',     note:'The market is pricing in real growth. The question is whether it materialises.'},
+    {max:Infinity, l:'Expensive', c:'expensive', note:'Priced for perfection — or EPS is depressed by a one-off. Read the notes before judging.'}
+  ];
+  var PB_BANDS = [
+    {max:0.8, l:'Deep value', c:'cheap',  note:'Trading below net assets. Could be a bargain, or the market doubting the book is worth its stated value.'},
+    {max:1.2, l:'At / below book', c:'fair', note:'Around net asset value. Common for Nigerian banks — the assets are loans, so quality matters.'},
+    {max:2.5, l:'Fair', c:'fair',         note:'A normal premium to book for a decent franchise.'},
+    {max:4,   l:'Elevated', c:'elevated', note:'A rich premium — justified only by high returns on equity.'},
+    {max:Infinity, l:'Expensive', c:'expensive', note:'Steep versus book. Usually only intangible-heavy businesses earn this.'}
+  ];
+  var PS_BANDS = [
+    {max:1, l:'Cheap', c:'cheap',       note:'Low — but worthless without the margin. Check what share of these sales becomes profit.'},
+    {max:3, l:'Fair', c:'fair',         note:'A normal band — provided margins are healthy.'},
+    {max:6, l:'Rich', c:'elevated',     note:'Demands strong margins and growth to justify.'},
+    {max:Infinity, l:'Expensive', c:'expensive', note:'Only fat-margin, fast-growing businesses earn a P/S this high.'}
+  ];
+  var EV_BANDS = [
+    {max:6,  l:'Cheap', c:'cheap',      note:'Inexpensive for the cash flows — sense-check whether earnings are at a cyclical peak.'},
+    {max:10, l:'Fair', c:'fair',        note:'A normal range for a steady business.'},
+    {max:14, l:'Elevated', c:'elevated',note:'Pricing in growth. Remember EBITDA flatters capital-heavy firms.'},
+    {max:Infinity, l:'Expensive', c:'expensive', note:'A premium that needs strong, durable growth behind it.'}
+  ];
+  var PEG_BANDS = [
+    {max:0.8, l:'Attractive', c:'cheap',  note:'Growth is cheap relative to the multiple — the classic Lynch sweet spot.'},
+    {max:1.2, l:'Fair', c:'fair',         note:'Around 1.0 — the multiple is roughly fair for the growth.'},
+    {max:2,   l:'Full', c:'elevated',     note:'Paying up for growth. Make sure the growth rate is realistic.'},
+    {max:Infinity, l:'Expensive', c:'expensive', note:'The multiple far outruns growth — priced for a story.'}
+  ];
+  var MOS_BANDS = [
+    {max:-0.15, l:'Overvalued', c:'expensive', note:'Price sits above intrinsic value — no margin of safety here.'},
+    {max:0.10,  l:'Fairly valued', c:'fair',   note:'Price and value are close — fine, but little room for error.'},
+    {max:0.30,  l:'Undervalued', c:'cheap',    note:'A real discount to value is opening up.'},
+    {max:Infinity, l:'Wide margin of safety', c:'cheap', note:'A large discount — attractive, if your assumptions hold.'}
+  ];
+
+  function dcf(v){
+    var r = v.r/100, g = v.g/100, gt = v.gt/100;
+    if(r <= gt) return {invalid:true, msg:'Discount rate must exceed terminal growth — otherwise value is infinite.'};
+    var pvExplicit = 0, cf = v.fcf, cf5 = v.fcf;
+    for(var t=1;t<=5;t++){
+      pvExplicit += cf / Math.pow(1+r, t);
+      cf5 = cf;
+      if(t<5) cf = cf * (1+g);
+    }
+    var terminal = cf5 * (1+gt) / (r - gt);
+    var pvTerminal = terminal / Math.pow(1+r,5);
+    var intrinsic = pvExplicit + pvTerminal;
+    return {intrinsic:intrinsic, terminalShare: pvTerminal/intrinsic};
+  }
+
+  // ---- calculator config registry ----
+  var CFG = {
+    pe: {
+      out: { price:naira, eps:naira1 },
+      gauge: STD, scaleMax: 40,
+      compute: function(v){
+        if(v.eps <= 0) return {main:'—', verdict:'Loss-making', color:'expensive', pos:1,
+          note:'PE is <b>meaningless</b> when earnings are zero or negative. Switch to P/S or EV/Sales.'};
+        var pe = v.price / v.eps, b = band(pe, PE_BANDS);
+        return {main:pe.toFixed(1)+'x', verdict:b.l, color:b.c, pos:clamp(pe/40,0,1), note:b.note};
+      }
+    },
+    pb: {
+      out:{ price:naira1, bv:naira1 }, gauge:STD, scaleMax:6,
+      compute:function(v){ var x=v.price/v.bv, b=band(x,PB_BANDS);
+        return {main:x.toFixed(2)+'x', verdict:b.l, color:b.c, pos:clamp(x/6,0,1), note:b.note}; }
+    },
+    ps: {
+      out:{ mc:bn, rev:bn }, gauge:STD, scaleMax:10,
+      compute:function(v){ var x=v.mc/v.rev, b=band(x,PS_BANDS);
+        return {main:x.toFixed(2)+'x', verdict:b.l, color:b.c, pos:clamp(x/10,0,1), note:b.note}; }
+    },
+    ev: {
+      out:{ mc:bn, debt:bn, cash:bn, ebitda:bn }, gauge:STD, scaleMax:20,
+      compute:function(v){ var ev=v.mc+v.debt-v.cash; var x=ev/v.ebitda; var b=band(x,EV_BANDS);
+        return {main:x.toFixed(1)+'x', verdict:b.l, color:b.c, pos:clamp(x/20,0,1),
+          note:'Enterprise value = <b>'+bn(ev)+'</b> ('+bn(v.mc)+' equity + '+bn(v.debt)+' debt − '+bn(v.cash)+' cash). '+b.note}; }
+    },
+    peg: {
+      out:{ pe:function(n){return n.toFixed(1)+'x';}, g:pct }, gauge:STD, scaleMax:3,
+      compute:function(v){ var x=v.pe/v.g, b=band(x,PEG_BANDS);
+        return {main:x.toFixed(2), verdict:b.l, color:b.c, pos:clamp(x/3,0,1), note:b.note}; }
+    },
+    dcf: {
+      out:{ fcf:naira, g:pct, gt:pct, r:pct, price:naira }, gauge:INTRINSIC, intrinsic:true,
+      compute:function(v){
+        var d = dcf(v);
+        if(d.invalid) return {main:'∞', verdict:'Invalid', color:'expensive', pos:0, note:d.msg};
+        var up = (d.intrinsic - v.price)/v.price, b = band(up, MOS_BANDS);
+        var pos = clamp((up + 0.5)/1.0, 0, 1);
+        return {main:naira(d.intrinsic), verdict:b.l, color:b.c, pos:pos,
+          note:'That\'s <b>'+(up>=0?'+':'')+(up*100).toFixed(0)+'%</b> versus the '+naira(v.price)+' price. Terminal value is <b>'+(d.terminalShare*100).toFixed(0)+'%</b> of the total — '+(d.terminalShare>0.6?'most of the answer is the far-future guess.':'a manageable share.')};
+      }
+    },
+    ddm: {
+      out:{ d:naira1, r:pct, g:pct, price:naira1 }, gauge:INTRINSIC, intrinsic:true,
+      compute:function(v){
+        if(v.r <= v.g) return {main:'∞', verdict:'Model breaks', color:'expensive', pos:0,
+          note:'Growth (g) must stay <b>below</b> the required return (r). A dividend growing faster than r forever is worth infinity — the model rejecting your inputs.'};
+        var val = v.d / ((v.r-v.g)/100);
+        var up = (val - v.price)/v.price, b = band(up, MOS_BANDS);
+        var pos = clamp((up + 0.5)/1.0, 0, 1);
+        return {main:naira1(val), verdict:b.l, color:b.c, pos:pos,
+          note:'Fair value = '+naira1(v.d)+' ÷ ('+v.r+'% − '+v.g+'%). That\'s <b>'+(up>=0?'+':'')+(up*100).toFixed(0)+'%</b> versus the '+naira1(v.price)+' price. '+b.note};
+      }
+    }
+  };
+
+  // ---- wire every calculator ----
+  function buildGauge(el, zones){
+    el.innerHTML='';
+    var track=document.createElement('div'); track.className='gauge-track';
+    zones.forEach(function(z){ var d=document.createElement('div'); d.className='z';
+      d.style.flex='1'; d.style.background='linear-gradient(90deg,'+ZONE[z.c]+'88,'+ZONE[z.c]+'cc)'; track.appendChild(d); });
+    var marker=document.createElement('div'); marker.className='gauge-marker'; marker.style.left='40%'; track.appendChild(marker);
+    var labels=document.createElement('div'); labels.className='gauge-labels';
+    zones.forEach(function(z){ var s=document.createElement('span'); s.textContent=z.l; labels.appendChild(s); });
+    el.appendChild(track); el.appendChild(labels);
+    return marker;
+  }
+
+  function setFill(input){
+    var min=parseFloat(input.min), max=parseFloat(input.max), val=parseFloat(input.value);
+    var p=((val-min)/(max-min))*100;
+    input.style.setProperty('--fill', p+'%');
+  }
+
+  document.querySelectorAll('[data-calc]').forEach(function(root){
+    var cfg = CFG[root.getAttribute('data-calc')];
+    if(!cfg) return;
+    var inputs = root.querySelectorAll('input[type=range]');
+    var mainEl = root.querySelector('[data-main]');
+    var verdictEl = root.querySelector('[data-verdict]');
+    var noteEl = root.querySelector('[data-note]');
+    var gaugeEl = root.querySelector('[data-gauge]');
+    var marker = buildGauge(gaugeEl, cfg.gauge);
+
+    function update(){
+      var v = {};
+      inputs.forEach(function(inp){
+        var f = inp.getAttribute('data-field');
+        v[f] = parseFloat(inp.value);
+        var o = root.querySelector('output[data-out="'+f+'"]');
+        if(o) o.textContent = (cfg.out[f] ? cfg.out[f](v[f]) : v[f]);
+        setFill(inp);
+      });
+      var r = cfg.compute(v);
+      mainEl.textContent = r.main;
+      mainEl.style.color = ZONE[r.color];
+      verdictEl.textContent = r.verdict;
+      verdictEl.style.color = ZONE[r.color];
+      noteEl.innerHTML = r.note;
+      marker.style.left = (r.pos*100) + '%';
+    }
+    inputs.forEach(function(inp){ inp.addEventListener('input', update); });
+    update();
+  });
+
+  // ---- tabs ----
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var panels = {};
+  document.querySelectorAll('.panel').forEach(function(p){ panels[p.id.replace('p-','')] = p; });
+  function activate(name, focus){
+    tabs.forEach(function(t){
+      var on = t.getAttribute('data-panel')===name;
+      t.setAttribute('aria-selected', on?'true':'false');
+      if(on && focus) t.focus();
+      if(on) t.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+    });
+    Object.keys(panels).forEach(function(k){ panels[k].classList.toggle('active', k===name); });
+    var top = document.querySelector('.tabs-shell');
+    if(top) window.scrollTo({top: top.offsetTop - 6, behavior:'smooth'});
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener('click', function(){ activate(t.getAttribute('data-panel'), false); });
+    t.addEventListener('keydown', function(e){
+      if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+        e.preventDefault();
+        var dir = e.key==='ArrowRight'?1:-1;
+        var ni = (i + dir + tabs.length) % tabs.length;
+        activate(tabs[ni].getAttribute('data-panel'), true);
+      }
+    });
+  });
+  // roadmap rungs jump to tabs
+  document.querySelectorAll('#ladder .rung').forEach(function(r){
+    r.addEventListener('click', function(){ activate(r.getAttribute('data-go'), false); });
+  });
+
+  // ---- forward PE expander ----
+  var fb = document.getElementById('fwd-btn'), fp = document.getElementById('fwd-panel');
+  if(fb && fp){
+    fb.addEventListener('click', function(){
+      var open = fb.getAttribute('aria-expanded')==='true';
+      fb.setAttribute('aria-expanded', open?'false':'true');
+      fp.classList.toggle('open', !open);
+    });
+  }
+
+  // ---- checklist ----
+  var cks = Array.prototype.slice.call(document.querySelectorAll('#checklist .ck'));
+  var fill = document.getElementById('ck-fill'), count = document.getElementById('ck-count');
+  function tally(){
+    var done = cks.filter(function(c){ return c.getAttribute('aria-pressed')==='true'; }).length;
+    if(fill) fill.style.width = (done/cks.length*100)+'%';
+    if(count) count.textContent = done + ' / ' + cks.length;
+  }
+  cks.forEach(function(c){
+    c.addEventListener('click', function(){
+      c.setAttribute('aria-pressed', c.getAttribute('aria-pressed')==='true'?'false':'true');
+      tally();
+    });
+  });
+  tally();
+
+  /* ===================== STOCK WORKBENCH ===================== */
+  var assistUnverified = false;
+
+  var TICKERS = {MTNN:'telecom',AIRTELAFRI:'telecom',GTCO:'banking',ZENITHBANK:'banking',UBA:'banking',ACCESSCORP:'banking',FBNH:'banking',FIDELITYBK:'banking',STERLINGNG:'banking',WEMABANK:'banking',JAIZBANK:'banking',FCMB:'banking',ETI:'banking',NEM:'insurance',CUSTODIAN:'insurance',AIICO:'insurance',MANSARD:'insurance',CORNERST:'insurance',SEPLAT:'oil',OANDO:'oil',ARADEL:'oil',CONOIL:'oil',TOTAL:'oil',ETERNA:'oil',DANGCEM:'cement',BUACEMENT:'cement',WAPCO:'cement',NB:'consumer',NESTLE:'consumer',UNILEVER:'consumer',CADBURY:'consumer',DANGSUGAR:'consumer',NASCON:'consumer',BUAFOODS:'consumer',FLOURMILL:'consumer',HONYFLOUR:'consumer',PZ:'consumer',PRESCO:'agric',OKOMUOIL:'agric',LIVESTOCK:'agric',TRANSCORP:'conglomerate',UACN:'conglomerate',SCOA:'conglomerate',NAHCO:'other',NGXGROUP:'other',CWG:'other'};
+
+  var SECTORS = {
+    banking:{label:'Banking',lead:['pb','pe','dy','ddm']},
+    insurance:{label:'Insurance',lead:['pb','pe','dy']},
+    oil:{label:'Oil & Gas',lead:['ev','pe']},
+    cement:{label:'Cement & Industrials',lead:['ev','pe']},
+    consumer:{label:'Consumer / FMCG',lead:['pe','ev','dy']},
+    telecom:{label:'Telecom',lead:['pef','ev']},
+    agric:{label:'Agriculture',lead:['pe','pb']},
+    conglomerate:{label:'Conglomerate',lead:['pb','pe']},
+    other:{label:'Services / Other',lead:['pe','ev','dy']}
+  };
+  var NAMES={pe:'PE (trailing)',pef:'PE (forward)',pb:'P/B',ps:'P/S',ev:'EV/EBITDA',dy:'dividend yield',peg:'PEG',dcf:'DCF value',ddm:'DDM value'};
+  var DY_BANDS=[{max:2,l:'Thin yield',c:'fair'},{max:6,l:'Modest yield',c:'fair'},{max:12,l:'Healthy yield',c:'cheap'},{max:18,l:'High — verify cover',c:'elevated'},{max:Infinity,l:'Very high — distress risk',c:'expensive'}];
+
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
+  function gv(id){var e=document.getElementById(id);if(!e)return NaN;var x=parseFloat(e.value);return isNaN(x)?NaN:x;}
+  function joinAnd(a){if(!a.length)return '';if(a.length===1)return a[0];if(a.length===2)return a[0]+' and '+a[1];return a.slice(0,-1).join(', ')+', and '+a[a.length-1];}
+  function listNames(a){return joinAnd(a.map(function(i){return NAMES[i];}));}
+
+  function readInputs(){
+    var price=gv('w-price'), sh=gv('w-shares'), mcapF=gv('w-mcap');
+    var mcap=(price>0&&sh>0)?price*sh/1000:(mcapF>0?mcapF:NaN);
+    return {price:price,sh:sh,mcap:mcap,epst:gv('w-epst'),epsf:gv('w-epsf'),bvps:gv('w-bvps'),
+      debt:(gv('w-debt')||0),cash:(gv('w-cash')||0),rev:gv('w-rev'),ebitda:gv('w-ebitda'),
+      fcf:gv('w-fcf'),div:gv('w-div'),epsg:gv('w-epsg'),divg:gv('w-divg'),r:gv('w-r'),tg:gv('w-tg')};
+  }
+
+  function metric(id,p){
+    var pr=p.price;
+    if(id==='pe'){ if(!(p.epst>0&&pr>0))return null; var x=pr/p.epst,b=band(x,PE_BANDS); return {id:id,name:'PE (trailing)',value:x,main:x.toFixed(1)+'x',color:b.c,verdict:b.l,pos:clamp(x/40,0,1),note:b.note,gauge:STD}; }
+    if(id==='pef'){ if(!(p.epsf>0&&pr>0))return null; var x=pr/p.epsf,b=band(x,PE_BANDS); return {id:id,name:'PE (forward)',value:x,main:x.toFixed(1)+'x',color:b.c,verdict:b.l,pos:clamp(x/40,0,1),note:'Forward — only as good as the estimate behind it. '+b.note,gauge:STD}; }
+    if(id==='pb'){ if(!(p.bvps>0&&pr>0))return null; var x=pr/p.bvps,b=band(x,PB_BANDS); return {id:id,name:'P/B',value:x,main:x.toFixed(2)+'x',color:b.c,verdict:b.l,pos:clamp(x/6,0,1),note:b.note,gauge:STD}; }
+    if(id==='ps'){ if(!(p.rev>0&&p.mcap>0))return null; var x=p.mcap/p.rev,b=band(x,PS_BANDS); return {id:id,name:'P/S',value:x,main:x.toFixed(2)+'x',color:b.c,verdict:b.l,pos:clamp(x/10,0,1),note:b.note,gauge:STD}; }
+    if(id==='ev'){ if(!(p.ebitda>0&&p.mcap>0))return null; var ev=p.mcap+p.debt-p.cash,x=ev/p.ebitda,b=band(x,EV_BANDS); return {id:id,name:'EV/EBITDA',value:x,main:x.toFixed(1)+'x',color:b.c,verdict:b.l,pos:clamp(x/20,0,1),note:'EV ≈ '+bn(ev)+'. '+b.note,gauge:STD}; }
+    if(id==='dy'){ if(!(p.div>0&&pr>0))return null; var y=p.div/pr*100,b=band(y,DY_BANDS); return {id:id,name:'Dividend yield',value:y,main:y.toFixed(1)+'%',color:b.c,verdict:b.l,pos:0,note:'₦'+p.div+' dividend on a ₦'+pr+' price. A yield is only safe if earnings and cash flow cover the payout.',gauge:false}; }
+    if(id==='peg'){ var pe=(p.epsf>0?pr/p.epsf:(p.epst>0?pr/p.epst:NaN)); if(!(pe>0&&p.epsg>0))return null; var x=pe/p.epsg,b=band(x,PEG_BANDS); return {id:id,name:'PEG',value:x,main:x.toFixed(2),color:b.c,verdict:b.l,pos:clamp(x/3,0,1),note:'PE '+pe.toFixed(1)+'x ÷ '+p.epsg+'% growth. '+b.note,gauge:STD}; }
+    if(id==='dcf'){ if(!(p.fcf>0&&pr>0&&p.r>p.tg))return null; var d=dcf({fcf:p.fcf,g:p.epsg,gt:p.tg,r:p.r}); if(d.invalid)return null; var up=(d.intrinsic-pr)/pr,b=band(up,MOS_BANDS); return {id:id,name:'DCF value / share',value:d.intrinsic,main:naira(d.intrinsic),color:b.c,verdict:b.l,pos:clamp(up+0.5,0,1),note:(up>=0?'+':'')+Math.round(up*100)+'% vs the ₦'+pr+' price. Terminal value = '+Math.round(d.terminalShare*100)+'% of the total.',gauge:INTRINSIC,terminalShare:d.terminalShare,up:up}; }
+    if(id==='ddm'){ if(!(p.div>0&&pr>0&&p.r>p.divg))return null; var val=p.div*(1+p.divg/100)/((p.r-p.divg)/100),up=(val-pr)/pr,b=band(up,MOS_BANDS); return {id:id,name:'DDM value / share',value:val,main:naira(val),color:b.c,verdict:b.l,pos:clamp(up+0.5,0,1),note:(up>=0?'+':'')+Math.round(up*100)+'% vs the ₦'+pr+' price. Next dividend ÷ (r − g).',gauge:INTRINSIC,up:up}; }
+    return null;
+  }
+
+  function mcardEl(r,isLead){
+    var el=document.createElement('div'); el.className='mcard'+(isLead?' is-lead':'');
+    el.innerHTML='<div class="mn">'+r.name+(isLead?'<span class="star">★ lead metric</span>':'')+'</div>'+
+      '<div class="mv" style="color:'+ZONE[r.color]+'">'+r.main+'</div>'+
+      '<div class="mverd" style="color:'+ZONE[r.color]+'">'+r.verdict+'</div>';
+    if(r.gauge){ var g=document.createElement('div'); g.className='gauge'; el.appendChild(g); var m=buildGauge(g,r.gauge); m.style.left=(r.pos*100)+'%'; }
+    var n=document.createElement('div'); n.className='mnote'; n.innerHTML=r.note; el.appendChild(n);
+    return el;
+  }
+  function renderLead(S,M){
+    var chips=S.lead.map(function(i){var on=!!M[i];return '<span class="lchip'+(on?'':' off')+'">'+NAMES[i]+(on?'':' · add inputs')+'</span>';}).join('');
+    document.getElementById('w-lead').innerHTML='<span class="lab">Lead metrics for '+S.label+'</span>'+chips;
+  }
+  function renderMetrics(S,M){
+    var box=document.getElementById('w-metrics'); box.innerHTML='';
+    var order=[]; S.lead.forEach(function(i){if(M[i]&&order.indexOf(i)<0)order.push(i);});
+    ['pe','pef','pb','ps','ev','dy','peg','dcf','ddm'].forEach(function(i){if(M[i]&&order.indexOf(i)<0)order.push(i);});
+    if(!order.length){box.innerHTML='<div class="reverse">Enter a price and at least one earnings, book-value, or dividend figure to see the metrics.</div>';return;}
+    order.forEach(function(i){box.appendChild(mcardEl(M[i],S.lead.indexOf(i)>=0));});
+  }
+  function renderReverse(p,M,nm){
+    var box=document.getElementById('w-reverse'); if(!(p.price>0)){box.innerHTML='';return;}
+    var parts=[];
+    if(M.pe)parts.push(M.pe.main+' trailing earnings'); if(M.pef)parts.push(M.pef.main+' forward earnings');
+    if(M.ev)parts.push('an EV/EBITDA of '+M.ev.main); if(M.pb)parts.push(M.pb.main+' its book value'); if(M.dy)parts.push('a '+M.dy.main+' yield');
+    if(!parts.length){box.innerHTML='';return;}
+    box.innerHTML='<b>Reverse read.</b> At ₦'+p.price+', the market is paying '+joinAnd(parts)+' for '+nm+'. The real question is not whether that looks high or low, but whether it is justified by the growth and returns you actually expect — and what would have to be true for the price to be wrong.';
+  }
+
+  function buildFlags(sector,S,p,M){
+    var F=[]; function push(s,t,b,v){F.push({sev:s,t:t,b:b,v:v});}
+    if(assistUnverified) push('hi','Inputs are not verified','Some figures were auto-fetched from the web and may be wrong, stale, or for the wrong entity. Everything below is only as good as these numbers.','Confirm every fetched figure against its linked source before acting.');
+    if((sector==='oil'||sector==='agric'||sector==='cement')&&M.pe&&M.pe.value<10)
+      push('hi','Possible peak-earnings trap','In a cyclical sector, a single-digit PE often appears at the TOP of the cycle — when earnings are unsustainably high — not when the stock is cheap.','Where are commodity prices and margins versus their own history?');
+    if(M.pe&&M.pef&&p.epsf>p.epst*1.4)
+      push('md','Trailing PE is flattering a recovery','Forward EPS (₦'+p.epsf+') is well above trailing (₦'+p.epst+'). The '+M.pe.main+' trailing multiple overstates how cheap it is; the '+M.pef.main+' forward is the honest read — but it rests on an estimate.','Is the forward EPS credible, and whose forecast is it?');
+    else if(M.pe&&p.epst>0&&(p.price/p.epst)>50)
+      push('md','Earnings look depressed','A very high PE here usually means EPS is temporarily crushed (a loss recovery or a one-off), not that the stock is dear.','Normalise EPS for exceptional items before judging.');
+    if(p.mcap>0&&(p.debt-p.cash)/p.mcap>0.4)
+      push('md','Material debt the PE ignores','Net debt is roughly '+Math.round((p.debt-p.cash)/p.mcap*100)+'% of market cap. PE values only the equity; EV/EBITDA is the fairer lens with this balance sheet.',(sector==='oil'||sector==='cement')?'Check the currency of the debt — USD borrowings add naira-devaluation risk.':'Check leverage, maturities and covenants.');
+    if((sector==='banking'||sector==='insurance')&&M.pb&&M.pb.value<1)
+      push('md','Below book — is the book real?','For a '+S.label.toLowerCase()+' business, P/B under 1.0 usually means the market doubts the stated net assets.',sector==='banking'?'Check NPL ratio, cost of risk and coverage — the book is only as good as the loan book.':'Check reserve adequacy, and how much profit is investment income versus underwriting.');
+    if(sector==='insurance')
+      push('lo','Insurer earnings can be lumpy','A large share of insurer profit can come from investment income that swings year to year (NEM\'s Q1-2026 PAT fell about 65% as investment income collapsed). One strong year is not a run-rate.','Split underwriting profit from investment income.');
+    if((sector==='oil'||sector==='cement'||sector==='telecom')&&M.ev)
+      push('lo','EBITDA overstates the cash','Capital-heavy business — EBITDA ignores the heavy capex it must keep spending, so EV/EBITDA flatters the cash reality.','Check capex-to-EBITDA and the actual free cash flow.');
+    if(M.dcf&&M.dcf.terminalShare>0.6)
+      push('md','DCF is mostly terminal value',Math.round(M.dcf.terminalShare*100)+'% of the DCF sits in the post-year-5 terminal value — a guess about the distant future.','Is terminal growth conservative — no higher than long-run inflation or GDP?');
+    if(p.fcf>0&&p.r>0&&p.r<18)
+      push('md','Discount rate may be too low for Nigeria','At '+p.r+'%, you may be under-pricing naira, inflation and country risk; most NGX DCFs use 20%+. A higher rate cuts the value sharply.','Rebuild the required return from a Nigerian risk-free rate plus an equity risk premium.');
+    if(M.ddm&&(p.r-p.divg)<4)
+      push('hi','DDM is hypersensitive','Required return ('+p.r+'%) and dividend growth ('+p.divg+'%) are close, so the value explodes on tiny changes — it is not reliable here.','Is dividend growth really sustainable that close to your required return?');
+    if(M.peg&&p.epsg>25)
+      push('md','Growth assumption is aggressive','The PEG (and any forward number) leans on '+p.epsg+'% growth. Few NGX names sustain that for long.','Does the track record support the growth you assumed?');
+    var anyCheapLead=S.lead.some(function(i){return M[i]&&M[i].color==='cheap';});
+    if(anyCheapLead&&M.dcf&&M.dcf.up<0)
+      push('hi','Multiples and cash flow disagree','It screens cheap on a headline multiple, but a DCF at '+p.r+'% says it is overvalued. In Nigeria\'s high-discount-rate world this gap is common — decide which lens you trust, and why.','Reconcile the multiple with the cash-flow assumptions.');
+    if(M.pe&&M.pe.color==='cheap'&&M.pef&&p.epsf<p.epst)
+      push('hi','Cheap, but earnings are falling','Forward EPS is below trailing — a low multiple on shrinking earnings is the classic value trap. Cheap can stay cheap.','Why are earnings declining, and is it structural or temporary?');
+    if(M.dy&&M.dy.value>15)
+      push('hi','Yield looks too good','A dividend yield above ~15% often signals the market expects a cut or sees distress.','Check the payout ratio and whether cash flow covers the dividend.');
+    push('lo','Normalise for one-offs','Strip exceptional items from EPS before trusting any earnings multiple — a single charge once made UACN look 50x expensive when the business was healthy.','Read the notes to the accounts for exceptional or one-off items.');
+    push('lo','Compare within the sector only','These verdict bands are general. A "cheap" multiple only means something against this stock\'s own sector and history.','Line it up against its direct NGX peers.');
+    var rank={hi:0,md:1,lo:2}; F.sort(function(a,b){return rank[a.sev]-rank[b.sev];}); return F;
+  }
+  function renderDA(F){
+    document.getElementById('w-da').innerHTML=F.map(function(f){
+      var lbl=f.sev==='hi'?'high':(f.sev==='md'?'watch':'note');
+      return '<div class="flag"><span class="sev '+f.sev+'">'+lbl+'</span><div><div class="ft">'+f.t+'</div><div class="fb">'+f.b+'</div>'+(f.v?'<div class="fv">▸ verify: '+f.v+'</div>':'')+'</div></div>';
+    }).join('');
+  }
+  function renderVerdict(sector,S,p,M,nm,F){
+    var lead=S.lead.filter(function(i){return M[i];});
+    var cheap=lead.filter(function(i){return M[i].color==='cheap';});
+    var fair=lead.filter(function(i){return M[i].color==='fair';});
+    var rich=lead.filter(function(i){return M[i].color==='expensive'||M[i].color==='elevated';});
+    var screen;
+    if(!lead.length) screen='Not enough verified inputs yet to screen '+nm+' on the metrics that fit a '+S.label+' business. Fill in the fields above.';
+    else {var parts=[]; if(cheap.length)parts.push('cheap on '+listNames(cheap)); if(fair.length)parts.push('fair on '+listNames(fair)); if(rich.length)parts.push('full or expensive on '+listNames(rich)); screen='On the metrics that fit a '+S.label+' business, '+nm+' screens '+joinAnd(parts)+'.';}
+    var hi=F.filter(function(f){return f.sev==='hi';});
+    var challenge=hi.length?('The analysis raises '+hi.length+' high-priority challenge'+(hi.length>1?'s':'')+'. Clear '+(hi.length>1?'them':'it')+' before you trust the screen.'):'No high-severity flags fired — but the cheapest-looking number is usually the one most worth distrusting. Work the checks below first.';
+    var verify=[]; F.forEach(function(f){if((f.sev==='hi'||f.sev==='md')&&f.v&&verify.indexOf(f.v)<0)verify.push(f.v);}); verify=verify.slice(0,5);
+    var unv=assistUnverified?'<div class="unv-banner"><span class="i">⚠</span><div>Running on <b>unverified, auto-fetched figures</b>. Confirm each against its source before this means anything for real money.</div></div>':'';
+    var vlist=verify.length?'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin:8px 0 4px">Must verify before any capital decision</div><ul class="verify-list">'+verify.map(function(v){return '<li><span class="tk">▸</span><span>'+v+'</span></li>';}).join('')+'</ul>':'';
+    document.getElementById('w-verdict').innerHTML=unv+'<div class="vh">'+screen+'</div><p>'+challenge+'</p>'+vlist+
+      '<div class="mos"><span class="i">◆</span><div><b>Margin of safety.</b> Even if everything checks out, act only when the price sits comfortably below your range of fair value — 20–30% for a Nigerian risk profile. The gap is the room your assumptions are allowed to be wrong in.</div></div>'+
+      '<p style="color:var(--ink)">Treat this as a structured starting point for your own judgment — not a verdict, and not a recommendation to buy or sell.</p>'+
+      '<div class="disc">Educational tool. It computes and challenges the figures you supply; it does not vouch for them. Verify every number against primary sources — the company\'s accounts, the NGX, your broker. This is not investment advice and I am not a financial adviser.</div>';
+  }
+
+  function renderAll(){
+    var p=readInputs();
+    var raw=document.getElementById('w-name').value.trim();
+    var nm=raw?esc(raw):'this stock';
+    var sector=document.getElementById('w-sector').value;
+    var S=SECTORS[sector]||SECTORS.other;
+    var M={}; ['pe','pef','pb','ps','ev','dy','peg','dcf','ddm'].forEach(function(i){var r=metric(i,p);if(r)M[i]=r;});
+    renderLead(S,M); renderMetrics(S,M); renderReverse(p,M,nm);
+    var F=buildFlags(sector,S,p,M); renderDA(F); renderVerdict(sector,S,p,M,nm,F);
+  }
+
+  // Detect whether we're running on Vercel (has the server-side /api/quote route)
+  var HAS_API = (
+    window.location.hostname.includes('vercel.app') ||
+    (window.location.hostname !== '' && window.location.hostname !== 'localhost' && !window.location.protocol.startsWith('file'))
+  );
+
+  async function fetchAssist(){
+    var out=document.getElementById('w-assist-out');
+    var nm=document.getElementById('w-name').value.trim();
+    if(!nm){out.innerHTML='<span style="color:var(--fair)">Type a stock name or ticker first.</span>';return;}
+    var btn=document.getElementById('w-assist'),old=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spin"></span> fetching live data…';
+    out.innerHTML='<div class="livebox"><span class="spin"></span> Pulling live NGX price for '+esc(nm)+'…</div>';
+    if(HAS_API){ await fetchFromAPI(nm,btn,old,out); } else { await fetchFromClaude(nm,btn,old,out); }
+  }
+
+  async function fetchFromAPI(nm,btn,old,out){
+    try{
+      var ticker=nm.toUpperCase().replace(/\s+/g,'');
+      var resp=await fetch('/api/quote?t='+encodeURIComponent(ticker));
+      if(!resp.ok){var err=await resp.json().catch(function(){return {error:'HTTP '+resp.status};});throw new Error(err.error||'HTTP '+resp.status);}
+      var d=await resp.json();
+      function set(id,val){if(val!=null&&!isNaN(val)){var e=document.getElementById(id);if(e){e.value=val;var f=e.closest('.field');if(f)f.classList.add('unv');}}}
+      set('w-price',d.price); set('w-shares',d.shares_outstanding_m); set('w-mcap',d.market_cap_bn); set('w-div',d.dividend_per_share);
+      if(d.sector&&SECTORS[d.sector])document.getElementById('w-sector').value=d.sector;
+      var html='';
+      if(d.price!=null&&d.pe_ratio!=null){
+        html+='<div class="livePE">Live price <b>₦'+d.price.toFixed(2)+'</b> · PE = <b>'+d.pe_ratio.toFixed(1)+'x</b> <span style="color:var(--ink-3);font-size:12px">(NGX Pulse)</span></div>';
+      } else if(d.price!=null){
+        html+='<div class="livePE">Live price <b>₦'+d.price.toFixed(2)+'</b>. NGX Pulse did not return PE — enter EPS above and it calculates instantly.</div>';
+      } else {
+        throw new Error(d.error||'No price returned');
+      }
+      if(d.change_percent!=null){var up=d.change_percent>=0;html+='<div style="font-size:12.5px;color:'+(up?'var(--cheap)':'var(--expensive)')+'">'+esc(d.name)+' '+(up?'▲':'▼')+Math.abs(d.change_percent).toFixed(2)+'% today</div>';}
+      if(d.dividend_per_share){html+='<div style="color:var(--ink-2);font-size:12.5px;margin-top:3px">Trailing annual dividend: ₦'+d.dividend_per_share.toFixed(2)+'/share</div>';}
+      if(d.asof)html+='<div class="asof">as of '+esc(new Date(d.asof).toLocaleString('en-NG',{dateStyle:'medium',timeStyle:'short'}))+'</div>';
+      html+='<div class="srcs"><a href="'+esc(d.source_url)+'" target="_blank" rel="noopener">NGX Pulse — '+esc(d.ticker)+'</a></div>';
+      html+='<div class="vneed" style="border-top:1px solid var(--line-soft);padding-top:8px;margin-top:9px">Live price direct from NGX Pulse — reliable. Add EPS if you have it to unlock the full analysis.</div>';
+      out.innerHTML='<div class="livebox">'+html+'</div>';
+      assistUnverified=false;
+      var vb=document.getElementById('w-verified');if(vb)vb.style.display='none';
+      renderAll();
+    }catch(err){
+      out.innerHTML='<div class="livebox"><div class="vneed">Live fetch failed ('+esc(String((err&&err.message)||err))+').<br>Check NGX_API_KEY is set in Vercel env vars. You can also type price and EPS manually — PE calculates instantly.</div></div>';
+    }finally{btn.disabled=false;btn.innerHTML=old;}
+  }
+
+  async function fetchFromClaude(nm,btn,old,out){
+    var sys='You fetch live equity data for a company listed on the Nigerian Exchange (NGX) so a PE ratio can be calculated. Use web search across NGX Pulse, Yahoo Finance (.LG tickers), afx.kwayisi.org, Investing.com, and company results. Return ONLY a JSON object, no prose, no markdown. Schema: {"company":string,"ticker":string,"sector":one of [banking,insurance,oil,cement,consumer,telecom,agric,conglomerate,other],"price":number|null,"eps_trailing":number|null,"eps_forward":number|null,"book_value_per_share":number|null,"dividend_per_share":number|null,"shares_outstanding_million":number|null,"market_cap_naira_bn":number|null,"pe_reported":number|null,"asof":string|null,"sources":[{"field":string,"url":string}],"notes":string}. All values in Naira for the NGX entity. CRITICAL: null if unverifiable. Every non-null number must have a source URL.';
+    try{
+      var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,system:sys,messages:[{role:'user',content:'Company / ticker: '+nm}],tools:[{type:'web_search_20250305',name:'web_search'}]})});
+      var data=await resp.json();
+      if(data&&data.type==='error')throw new Error((data.error&&data.error.message)||'API error');
+      var text=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n');
+      var js=text.replace(/```json|```/g,'').trim();var mm=js.match(/\{[\s\S]*\}/);if(mm)js=mm[0];
+      var d=JSON.parse(js);
+      function set(id,val){if(val!=null&&!isNaN(val)){var e=document.getElementById(id);if(e){e.value=val;var f=e.closest('.field');if(f)f.classList.add('unv');}}}
+      set('w-price',d.price);set('w-epst',d.eps_trailing);set('w-epsf',d.eps_forward);set('w-bvps',d.book_value_per_share);set('w-div',d.dividend_per_share);set('w-shares',d.shares_outstanding_million);set('w-mcap',d.market_cap_naira_bn);
+      if(d.sector&&SECTORS[d.sector])document.getElementById('w-sector').value=d.sector;
+      assistUnverified=true;
+      var vb=document.getElementById('w-verified');if(vb)vb.style.display='inline-flex';
+      var p=readInputs(),html='';
+      if(p.price>0&&p.epst>0){var pe=p.price/p.epst;html+='<div class="livePE">PE = ₦'+p.price.toFixed(2)+' ÷ ₦'+p.epst.toFixed(2)+' = <b>'+pe.toFixed(1)+'x</b>'+(p.epsf>0?' · forward '+(p.price/p.epsf).toFixed(1)+'x':'')+'</div>';if(d.pe_reported&&Math.abs(d.pe_reported-pe)/pe>0.10)html+='<div class="vneed">Source lists PE as '+d.pe_reported+'x — gap from '+pe.toFixed(1)+'x usually means different EPS basis.</div>';}
+      else if(p.price>0){html+='<div class="livePE">Price <b>₦'+p.price.toFixed(2)+'</b>. EPS not verified — add it above.'+(d.pe_reported?' Source lists PE '+d.pe_reported+'x.':'')+'</div>';}
+      else{html+='<div class="vneed">Could not verify price. '+(d.notes?esc(d.notes):'Enter figures manually.')+'</div>';}
+      var srcs=(d.sources||[]).filter(function(s){return s&&s.url;}).map(function(s){return '<a href="'+esc(s.url)+'" target="_blank" rel="noopener">'+esc(s.field||'source')+'</a>';}).join('');
+      if(d.asof)html+='<div class="asof">as of '+esc(d.asof)+'</div>';
+      html+=srcs?'<div class="srcs">Sources: '+srcs+'</div>':'<div class="vneed">No sources returned — enter figures manually.</div>';
+      html+='<div class="vneed" style="border-top:1px solid var(--line-soft);padding-top:8px;margin-top:9px">Fetched via web search. Unverified — check sources before acting.</div>';
+      out.innerHTML='<div class="livebox">'+html+'</div>';
+      renderAll();
+    }catch(err){
+      out.innerHTML='<div class="livebox"><div class="vneed">Fetch failed ('+esc(String((err&&err.message)||err))+'). Type price + EPS manually — PE calculates instantly.</div></div>';
+    }finally{btn.disabled=false;btn.innerHTML=old;}
+  }
+
+    ['w-price','w-shares','w-mcap','w-epst','w-epsf','w-bvps','w-debt','w-cash','w-rev','w-ebitda','w-fcf','w-div','w-epsg','w-divg','w-r','w-tg'].forEach(function(id){var e=document.getElementById(id);if(e)e.addEventListener('input',renderAll);});
+  var wsel=document.getElementById('w-sector'); if(wsel)wsel.addEventListener('change',renderAll);
+  var wname=document.getElementById('w-name'); if(wname)wname.addEventListener('input',function(){var t=wname.value.trim().toUpperCase();if(TICKERS[t])document.getElementById('w-sector').value=TICKERS[t];renderAll();});
+  var wrun=document.getElementById('w-run'); if(wrun)wrun.addEventListener('click',renderAll);
+  var wassist=document.getElementById('w-assist'); if(wassist)wassist.addEventListener('click',fetchAssist);
+  var wver=document.getElementById('w-verified'); if(wver)wver.addEventListener('click',function(){assistUnverified=false;document.querySelectorAll('.field.unv').forEach(function(f){f.classList.remove('unv');});wver.style.display='none';renderAll();});
+  renderAll();
+})();
+</script>
+</body>
+</html>
